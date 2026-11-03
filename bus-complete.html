@@ -987,7 +987,8 @@ body {
     <p class="text-muted" style="font-size:13px;margin-bottom:12px;">أدخل الكود المكوّن من 6 أحرف (إنجليزية وأرقام) الذي حصلت عليه من المضيف.</p>
     <div class="form-group">
       <label class="form-label">كود الغرفة</label>
-      <input type="text" id="join-code" class="form-input" placeholder="مثال: AB3K7M" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-size:22px;font-weight:700;" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+      <input type="text" id="join-code" class="form-input" placeholder="______" maxlength="6" style="text-transform:uppercase;letter-spacing:2px;text-align:center;font-size:24px;font-weight:700;width:100%;padding:14px 8px;" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" oninput="onJoinCodeInput(event)">
+      <div id="join-code-hint" style="text-align:center;font-size:12px;color:var(--text-light);margin-top:6px;min-height:16px;">أدخل 6 أحرف (A-Z ما عدا O و I، وأرقام 2-9)</div>
     </div>
     <button class="btn btn-secondary" onclick="joinRoom()">انضمام للغرفة</button>
   </div>
@@ -2856,6 +2857,16 @@ function goOnlineMenu() {
   loadPlayerName();
   initAvatarPicker('online-avatar-picker');
   showScreen('screen-online-menu');
+  // Reset the join code field and button state
+  const joinInput = document.getElementById('join-code');
+  if (joinInput) joinInput.value = '';
+  const hint = document.getElementById('join-code-hint');
+  if (hint) {
+    hint.textContent = 'أدخل 6 أحرف (A-Z ما عدا O و I، وأرقام 2-9)';
+    hint.style.color = 'var(--text-light)';
+  }
+  const btn = document.querySelector('button[onclick="joinRoom()"]');
+  if (btn) btn.disabled = true;
 }
 
 // Room code: 6 uppercase letters + digits (no confusing chars like O/0/I/1)
@@ -2980,6 +2991,40 @@ function createRoom() {
     try { state.peer.destroy(); } catch(e) {}
     state.peer = null;
   });
+}
+
+// Real-time input handler for the join code field
+function onJoinCodeInput(event) {
+  const input = event.target;
+  // Get the raw value, convert to uppercase, and keep only valid characters
+  let val = input.value.toUpperCase();
+  // Keep only chars from the allowed set
+  val = val.split('').filter(ch => ROOM_CODE_CHARS.indexOf(ch) >= 0).join('');
+  // Enforce max length
+  if (val.length > ROOM_CODE_LENGTH) val = val.slice(0, ROOM_CODE_LENGTH);
+  // Update the input value (this also moves the cursor to the end on most browsers)
+  if (input.value !== val) {
+    input.value = val;
+  }
+  // Update the hint
+  const hint = document.getElementById('join-code-hint');
+  if (hint) {
+    if (val.length === 0) {
+      hint.textContent = 'أدخل 6 أحرف (A-Z ما عدا O و I، وأرقام 2-9)';
+      hint.style.color = 'var(--text-light)';
+    } else if (val.length < ROOM_CODE_LENGTH) {
+      hint.textContent = `${val.length} / 6 أحرف — أكمل الكود`;
+      hint.style.color = 'var(--accent-dark)';
+    } else {
+      hint.textContent = '✓ الكود مكتمل — اضغط "انضمام للغرفة"';
+      hint.style.color = 'var(--success)';
+    }
+  }
+  // Update the join button state
+  const btn = document.querySelector('button[onclick="joinRoom()"]');
+  if (btn) {
+    btn.disabled = (val.length !== ROOM_CODE_LENGTH);
+  }
 }
 
 function joinRoom() {
