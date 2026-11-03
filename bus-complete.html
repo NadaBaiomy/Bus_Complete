@@ -1,0 +1,3429 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#6B46C1">
+<meta name="description" content="لعبة أتوبيس كومبليت - لعبة الحروف والفئات العربية الشهيرة">
+<title>أتوبيس كومبليت - Bus Complete</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* =====================================================
+   Bus Complete - لعبة أتوبيس كومبليت
+   تصميم عصري RTL يدعم الموبايل والكمبيوتر
+   ===================================================== */
+
+:root {
+  --primary: #6B46C1;
+  --primary-dark: #553C9A;
+  --primary-light: #9F7AEA;
+  --secondary: #EC4899;
+  --accent: #FBBF24;
+  --accent-dark: #F59E0B;
+  --success: #10B981;
+  --danger: #EF4444;
+  --info: #3B82F6;
+  --bg-1: #FAF5FF;
+  --bg-2: #FDF2F8;
+  --text: #1F2937;
+  --text-light: #6B7280;
+  --card: #FFFFFF;
+  --border: #E5E7EB;
+  --shadow: 0 10px 30px rgba(107, 70, 193, 0.15);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --radius: 18px;
+  --radius-sm: 12px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  font-family: 'Cairo', 'Tajawal', 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+body {
+  background-attachment: fixed;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* === Screens === */
+.screen {
+  display: none;
+  min-height: 100vh;
+  padding: 16px;
+  max-width: 760px;
+  margin: 0 auto;
+  animation: fadeIn 0.35s ease;
+}
+.screen.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* === Header === */
+.app-header {
+  text-align: center;
+  padding: 24px 16px 8px;
+}
+.app-logo {
+  font-size: 42px;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -1px;
+  margin-bottom: 4px;
+}
+.app-tagline {
+  color: var(--text-light);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* === Cards === */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* === Buttons === */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 22px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  color: white;
+  background: var(--primary);
+  min-height: 52px;
+  width: 100%;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(107, 70, 193, 0.35); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); }
+.btn-secondary { background: linear-gradient(135deg, var(--secondary) 0%, #DB2777 100%); }
+.btn-accent { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%); color: #422006; }
+.btn-success { background: linear-gradient(135deg, var(--success) 0%, #059669 100%); }
+.btn-danger { background: linear-gradient(135deg, var(--danger) 0%, #DC2626 100%); }
+.btn-ghost { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+.btn-ghost:hover { background: var(--primary); color: white; }
+.btn-sm { padding: 10px 16px; min-height: 42px; font-size: 14px; }
+.btn-lg { padding: 18px 28px; min-height: 64px; font-size: 18px; }
+.btn-block { width: 100%; }
+
+/* === Home Screen === */
+.home-modes {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.mode-btn {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: right;
+  font-family: inherit;
+  width: 100%;
+}
+.mode-btn:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.mode-btn-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.mode-btn-icon.purple { background: linear-gradient(135deg, #E9D5FF, #C4B5FD); }
+.mode-btn-icon.pink { background: linear-gradient(135deg, #FBCFE8, #F9A8D4); }
+.mode-btn-icon.yellow { background: linear-gradient(135deg, #FEF3C7, #FDE68A); }
+.mode-btn-icon.blue { background: linear-gradient(135deg, #BFDBFE, #93C5FD); }
+.mode-btn-text { flex: 1; }
+.mode-btn-title { font-weight: 700; font-size: 17px; color: var(--text); }
+.mode-btn-desc { font-size: 13px; color: var(--text-light); }
+
+/* === Forms === */
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+  font-size: 14px;
+}
+.form-input, .form-select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 16px;
+  background: white;
+  color: var(--text);
+  transition: border-color 0.2s;
+}
+.form-input:focus, .form-select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+.form-input::placeholder { color: #9CA3AF; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* === Option chips === */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 2px solid var(--border);
+  background: white;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text);
+}
+.chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+.chip:hover:not(.active) { border-color: var(--primary-light); }
+
+/* === Toggle === */
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+.toggle {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  background: #D1D5DB;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle.on { background: var(--success); }
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.toggle.on::after { transform: translateX(-22px); }
+
+/* === Game Screen === */
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 14px;
+  gap: 10px;
+}
+.game-round-info {
+  font-size: 13px;
+  color: var(--text-light);
+  font-weight: 600;
+}
+.game-round-info b { color: var(--primary); }
+
+.timer-display {
+  font-size: 28px;
+  font-weight: 900;
+  font-family: 'Cairo', monospace;
+  color: var(--primary);
+  min-width: 70px;
+  text-align: center;
+  background: #F3E8FF;
+  padding: 6px 14px;
+  border-radius: 12px;
+}
+.timer-display.warn { color: var(--danger); background: #FEE2E2; animation: pulse 1s infinite; }
+
+.letter-banner {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.letter-label {
+  font-size: 14px;
+  opacity: 0.9;
+  margin-bottom: 4px;
+}
+.letter-display {
+  font-size: 80px;
+  font-weight: 900;
+  line-height: 1;
+  margin: 4px 0;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.letter-display.pop { animation: pop 0.5s ease; }
+
+.player-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  color: var(--primary);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+.player-badge .avatar { width: 22px; height: 22px; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+
+/* === Answer Table === */
+.answers-table {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 14px;
+}
+.answer-row {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.answer-row:last-child { border-bottom: none; }
+.answer-cat {
+  font-weight: 700;
+  color: var(--primary-dark);
+  font-size: 15px;
+  text-align: center;
+  background: #F3E8FF;
+  padding: 10px 4px;
+  border-radius: 10px;
+}
+.answer-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 16px;
+  background: white;
+  color: var(--text);
+  transition: all 0.2s;
+}
+.answer-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: #FAF5FF;
+}
+.answer-input.locked { background: #F3F4F6; color: var(--text-light); }
+.answer-input.invalid-letter { border-color: var(--danger); background: #FEF2F2; }
+
+.complete-btn {
+  width: 100%;
+  padding: 18px;
+  font-size: 20px;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+  transition: all 0.2s;
+  font-family: inherit;
+  position: sticky;
+  bottom: 12px;
+  z-index: 5;
+}
+.complete-btn:hover { transform: translateY(-2px); }
+.complete-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* === Results Table === */
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  font-size: 14px;
+}
+.results-table th, .results-table td {
+  padding: 10px 8px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.results-table th {
+  background: var(--primary);
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+}
+.results-table td.cat-cell {
+  font-weight: 700;
+  background: #F3E8FF;
+  color: var(--primary-dark);
+  text-align: center;
+  font-size: 13px;
+}
+.results-table tr:last-child td { border-bottom: none; }
+.results-table .answer-cell {
+  font-size: 13px;
+  max-width: 100px;
+  overflow-wrap: break-word;
+}
+.results-table .pts {
+  font-weight: 700;
+  font-size: 14px;
+}
+.pts-10 { color: var(--success); }
+.pts-5 { color: var(--accent-dark); }
+.pts-0 { color: var(--text-light); }
+
+/* === Score summary === */
+.scoreboard {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.score-row {
+  display: grid;
+  grid-template-columns: 40px 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  background: var(--card);
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+.score-row.winner {
+  background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+  border: 2px solid var(--accent);
+}
+.score-rank {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 16px;
+}
+.score-rank.gold { background: linear-gradient(135deg, #FCD34D, #F59E0B); }
+.score-rank.silver { background: linear-gradient(135deg, #E5E7EB, #9CA3AF); }
+.score-rank.bronze { background: linear-gradient(135deg, #FED7AA, #FB923C); }
+.score-name { font-weight: 700; font-size: 15px; }
+.score-detail { font-size: 12px; color: var(--text-light); }
+.score-total {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--primary);
+}
+.score-delta {
+  font-size: 12px;
+  color: var(--success);
+  font-weight: 700;
+  background: #D1FAE5;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* === Review modal === */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: white;
+  border-radius: var(--radius);
+  padding: 20px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slide-up 0.3s ease;
+}
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin-bottom: 12px;
+}
+
+.review-item {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+.review-cat {
+  font-weight: 700;
+  color: var(--primary-dark);
+  font-size: 13px;
+  background: #F3E8FF;
+  padding: 6px;
+  border-radius: 8px;
+  text-align: center;
+}
+.review-answer {
+  font-size: 15px;
+  font-weight: 600;
+}
+.review-controls {
+  display: flex;
+  gap: 4px;
+}
+.review-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: white;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.review-btn.valid { background: var(--success); color: white; border-color: var(--success); }
+.review-btn.invalid { background: var(--danger); color: white; border-color: var(--danger); }
+
+/* === Lobby === */
+.lobby-code {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.lobby-code-label { font-size: 13px; opacity: 0.9; margin-bottom: 4px; }
+.lobby-code-value {
+  font-size: 40px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  font-family: 'Cairo', monospace;
+  margin: 6px 0;
+}
+.lobby-code-hint { font-size: 12px; opacity: 0.85; }
+
+.player-list {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0;
+}
+.player-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #F9FAFB;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.player-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.player-name { font-weight: 700; flex: 1; }
+.host-tag {
+  background: var(--accent);
+  color: #422006;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* === Final results === */
+.winner-card {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  color: #422006;
+  border-radius: var(--radius);
+  padding: 30px 20px;
+  text-align: center;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  animation: pop 0.6s ease;
+}
+.winner-trophy { font-size: 70px; margin-bottom: 6px; }
+.winner-title { font-size: 14px; font-weight: 600; opacity: 0.8; }
+.winner-name { font-size: 32px; font-weight: 900; margin: 4px 0; }
+.winner-score { font-size: 18px; font-weight: 700; }
+
+/* === Confetti === */
+.confetti {
+  position: fixed;
+  top: -10px;
+  width: 10px;
+  height: 14px;
+  z-index: 200;
+  pointer-events: none;
+  animation: confetti-fall linear forwards;
+}
+
+/* === Toast === */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 300;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  animation: slide-up 0.3s ease;
+  max-width: 90%;
+  text-align: center;
+}
+.toast.success { background: var(--success); }
+.toast.error { background: var(--danger); }
+.toast.info { background: var(--info); }
+
+/* === Connecting overlay === */
+.loader {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* === Misc === */
+.text-center { text-align: center; }
+.text-muted { color: var(--text-light); }
+.mb-0 { margin-bottom: 0; }
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.gap-8 { gap: 8px; }
+.divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+.section-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 14px 0 8px;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+}
+.category-chip {
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: white;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+.category-chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.avatar-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.avatar-option {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  background: #F3E8FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.avatar-option.active {
+  border-color: var(--primary);
+  background: white;
+  transform: scale(1.1);
+}
+
+@media (min-width: 600px) {
+  .answer-row { grid-template-columns: 110px 1fr; }
+  .app-logo { font-size: 52px; }
+  .letter-display { font-size: 100px; }
+}
+
+@media (max-width: 400px) {
+  .answer-row { grid-template-columns: 78px 1fr; gap: 6px; }
+  .answer-cat { font-size: 13px; padding: 8px 2px; }
+  .app-logo { font-size: 34px; }
+  .letter-display { font-size: 64px; }
+}
+
+/* Hide scrollbar but allow scroll */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--primary-light); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ============ HOME SCREEN ============ -->
+<div id="screen-home" class="screen active">
+  <div class="app-header">
+    <div class="app-logo">أتوبيس كومبليت</div>
+    <div class="app-tagline">لعبة الحروف والفئات العربية الشهيرة</div>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <div style="text-align:center;padding:10px;">
+      <div style="font-size:64px;line-height:1;">🚌</div>
+      <p class="text-muted" style="margin-top:8px;font-size:14px;">اختر طريقة اللعب التي تناسبك</p>
+    </div>
+  </div>
+
+  <div class="home-modes">
+    <button class="mode-btn" onclick="goSetup('single')">
+      <div class="mode-btn-icon purple">🤖</div>
+      <div class="mode-btn-text">
+        <div class="mode-btn-title">العب ضد الكمبيوتر</div>
+        <div class="mode-btn-desc">تحدّى الكمبيوتر في جولات ممتعة</div>
+      </div>
+    </button>
+
+    <button class="mode-btn" onclick="goSetup('local')">
+      <div class="mode-btn-icon pink">👥</div>
+      <div class="mode-btn-text">
+        <div class="mode-btn-title">العب مع الأصدقاء (جهاز واحد)</div>
+        <div class="mode-btn-desc">العبوا على نفس الجهاز بالتناوب</div>
+      </div>
+    </button>
+
+    <button class="mode-btn" onclick="goOnlineMenu()">
+      <div class="mode-btn-icon yellow">🌐</div>
+      <div class="mode-btn-text">
+        <div class="mode-btn-title">العب أونلاين مع الأصدقاء</div>
+        <div class="mode-btn-desc">أنشئ غرفة وشارك الكود مع أصدقائك</div>
+      </div>
+    </button>
+
+    <button class="mode-btn" onclick="showScreen('screen-daily')">
+      <div class="mode-btn-icon blue">📅</div>
+      <div class="mode-btn-text">
+        <div class="mode-btn-title">التحدي اليومي</div>
+        <div class="mode-btn-desc">حرف وفئات جديدة كل يوم</div>
+      </div>
+    </button>
+
+    <button class="mode-btn" onclick="showScreen('screen-settings')">
+      <div class="mode-btn-icon purple">⚙️</div>
+      <div class="mode-btn-text">
+        <div class="mode-btn-title">الإعدادات</div>
+        <div class="mode-btn-desc">خصّص اللعبة ونظام النقاط</div>
+      </div>
+    </button>
+
+    <button class="mode-btn" onclick="showScreen('screen-howto')">
+      <div class="mode-btn-icon blue">📖</div>
+      <div class="mode-btn-text">
+        <div class="mode-btn-title">كيف تلعب؟</div>
+        <div class="mode-btn-desc">تعلم قواعد اللعبة</div>
+      </div>
+    </button>
+  </div>
+
+  <div class="text-center text-muted" style="margin-top:24px;font-size:12px;">
+    صُنع بحب ❤️ — Bus Complete
+  </div>
+</div>
+
+<!-- ============ SETUP SCREEN ============ -->
+<div id="screen-setup" class="screen">
+  <div class="flex-between" style="margin-bottom:12px;">
+    <button class="btn btn-ghost btn-sm" style="width:auto;padding:8px 14px;min-height:auto;" onclick="showScreen('screen-home')">← رجوع</button>
+    <h2 style="font-size:20px;color:var(--primary-dark);" id="setup-title">إعداد المباراة</h2>
+    <div style="width:60px;"></div>
+  </div>
+
+  <div class="card">
+    <div class="form-group">
+      <label class="form-label">اسم اللاعب</label>
+      <input type="text" id="setup-player-name" class="form-input" placeholder="اكتب اسمك" maxlength="14">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">اختر صورتك الرمزية</label>
+      <div class="avatar-picker" id="avatar-picker"></div>
+    </div>
+
+    <div class="form-group" id="ai-count-group">
+      <label class="form-label">عدد لاعبي الكمبيوتر</label>
+      <div class="chips" id="ai-count-chips">
+        <button class="chip" data-val="1">1</button>
+        <button class="chip active" data-val="2">2</button>
+        <button class="chip" data-val="3">3</button>
+      </div>
+    </div>
+
+    <div class="form-group" id="local-count-group" style="display:none;">
+      <label class="form-label">عدد اللاعبين</label>
+      <div class="chips" id="local-count-chips">
+        <button class="chip" data-val="2">2</button>
+        <button class="chip active" data-val="3">3</button>
+        <button class="chip" data-val="4">4</button>
+        <button class="chip" data-val="5">5</button>
+        <button class="chip" data-val="6">6</button>
+      </div>
+    </div>
+
+    <div class="form-group" id="local-players-names" style="display:none;">
+      <label class="form-label">أسماء اللاعبين</label>
+      <div id="local-names-container"></div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">عدد الجولات</label>
+        <select id="setup-rounds" class="form-select">
+          <option value="3">3 جولات</option>
+          <option value="5" selected>5 جولات</option>
+          <option value="7">7 جولات</option>
+          <option value="10">10 جولات</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">مدة الجولة</label>
+        <select id="setup-duration" class="form-select">
+          <option value="45">45 ثانية</option>
+          <option value="60" selected>60 ثانية</option>
+          <option value="90">90 ثانية</option>
+          <option value="120">120 ثانية</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">مستوى الصعوبة</label>
+      <div class="chips" id="difficulty-chips">
+        <button class="chip active" data-val="easy">سهل</button>
+        <button class="chip" data-val="medium">متوسط</button>
+        <button class="chip" data-val="hard">صعب</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 اختر الفئات</div>
+    <div class="category-grid" id="category-grid"></div>
+    <div class="mt-16 flex-between gap-8">
+      <button class="btn btn-ghost btn-sm" style="width:auto;" onclick="selectAllCategories(true)">تحديد الكل</button>
+      <button class="btn btn-ghost btn-sm" style="width:auto;" onclick="selectAllCategories(false)">إلغاء الكل</button>
+      <button class="btn btn-ghost btn-sm" style="width:auto;" onclick="resetCategories()">الافتراضي</button>
+    </div>
+  </div>
+
+  <button class="btn btn-primary btn-lg" onclick="startMatch()">ابدأ المباراة 🚀</button>
+</div>
+
+<!-- ============ ONLINE MENU ============ -->
+<div id="screen-online-menu" class="screen">
+  <div class="flex-between" style="margin-bottom:12px;">
+    <button class="btn btn-ghost btn-sm" style="width:auto;padding:8px 14px;min-height:auto;" onclick="showScreen('screen-home')">← رجوع</button>
+    <h2 style="font-size:20px;color:var(--primary-dark);">اللعب أونلاين</h2>
+    <div style="width:60px;"></div>
+  </div>
+
+  <div class="card">
+    <div class="form-group">
+      <label class="form-label">اسمك</label>
+      <input type="text" id="online-player-name" class="form-input" placeholder="اكتب اسمك" maxlength="14">
+    </div>
+    <div class="form-group">
+      <label class="form-label">صورتك الرمزية</label>
+      <div class="avatar-picker" id="online-avatar-picker"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🌐 إنشاء غرفة جديدة</div>
+    <p class="text-muted" style="font-size:14px;margin-bottom:12px;">أنشئ غرفة خاصة واحصل على كود لمشاركته مع أصدقائك.</p>
+    <button class="btn btn-primary" onclick="createRoom()">إنشاء غرفة</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔑 الانضمام لغرفة</div>
+    <div class="form-group">
+      <label class="form-label">كود الغرفة</label>
+      <input type="text" id="join-code" class="form-input" placeholder="أدخل الكود المكوّن من 6 أحرف" maxlength="6" style="text-transform:uppercase;letter-spacing:3px;text-align:center;font-size:20px;font-weight:700;">
+    </div>
+    <button class="btn btn-secondary" onclick="joinRoom()">انضمام للغرفة</button>
+  </div>
+
+  <div class="card text-center">
+    <p class="text-muted" style="font-size:13px;">💡 تستخدم اللعبة اتصال مباشر بين الأجهزة (P2P) عبر الإنترنت. لا حاجة لتسجيل دخول.</p>
+  </div>
+</div>
+
+<!-- ============ LOBBY ============ -->
+<div id="screen-lobby" class="screen">
+  <div class="flex-between" style="margin-bottom:12px;">
+    <button class="btn btn-ghost btn-sm" style="width:auto;padding:8px 14px;min-height:auto;" onclick="leaveRoom()">← خروج</button>
+    <h2 style="font-size:20px;color:var(--primary-dark);">غرفة الانتظار</h2>
+    <div style="width:60px;"></div>
+  </div>
+
+  <div class="lobby-code">
+    <div class="lobby-code-label">كود الغرفة — شاركه مع أصدقائك</div>
+    <div class="lobby-code-value" id="lobby-code-display">------</div>
+    <div class="lobby-code-hint">عدد اللاعبين: <span id="lobby-player-count">1</span></div>
+    <button class="btn btn-accent btn-sm" style="width:auto;margin-top:10px;" onclick="copyRoomCode()">📋 نسخ الكود</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">👥 اللاعبون</div>
+    <div class="player-list" id="lobby-player-list"></div>
+  </div>
+
+  <div class="card" id="host-settings-card">
+    <div class="card-title">⚙️ إعدادات المضيف</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">عدد الجولات</label>
+        <select id="lobby-rounds" class="form-select">
+          <option value="3">3 جولات</option>
+          <option value="5" selected>5 جولات</option>
+          <option value="7">7 جولات</option>
+          <option value="10">10 جولات</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">مدة الجولة</label>
+        <select id="lobby-duration" class="form-select">
+          <option value="45">45 ثانية</option>
+          <option value="60" selected>60 ثانية</option>
+          <option value="90">90 ثانية</option>
+          <option value="120">120 ثانية</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">مستوى الصعوبة</label>
+      <div class="chips" id="lobby-difficulty-chips">
+        <button class="chip active" data-val="easy">سهل</button>
+        <button class="chip" data-val="medium">متوسط</button>
+        <button class="chip" data-val="hard">صعب</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">الفئات</label>
+      <div class="category-grid" id="lobby-category-grid"></div>
+      <div class="mt-8 flex-between gap-8">
+        <button class="btn btn-ghost btn-sm" style="width:auto;" onclick="selectAllCategories(true,'lobby-category-grid')">تحديد الكل</button>
+        <button class="btn btn-ghost btn-sm" style="width:auto;" onclick="resetCategories('lobby-category-grid')">الافتراضي</button>
+      </div>
+    </div>
+
+    <button class="btn btn-success btn-lg" onclick="hostStartMatch()">🚀 بدء المباراة</button>
+  </div>
+
+  <div class="card text-center" id="guest-waiting-card" style="display:none;">
+    <p class="text-muted">⏳ بانتظار أن يبدأ المضيف المباراة...</p>
+    <p class="text-muted" style="font-size:13px;margin-top:8px;" id="lobby-settings-summary"></p>
+  </div>
+
+  <div class="text-center text-muted" style="font-size:12px;margin-top:12px;">
+    💡 يمكن لغرفتك استقبال حتى 50 لاعبًا
+  </div>
+</div>
+
+<!-- ============ GAME SCREEN ============ -->
+<div id="screen-game" class="screen">
+  <div class="game-header">
+    <div class="game-round-info">
+      الجولة <b id="game-round-num">1</b> / <span id="game-round-total">5</span><br>
+      <span id="game-mode-label">فردي</span>
+    </div>
+    <div class="timer-display" id="timer-display">60</div>
+  </div>
+
+  <div class="letter-banner">
+    <div class="letter-label">الحرف</div>
+    <div class="letter-display" id="letter-display">ا</div>
+    <div class="player-badge" id="current-player-badge">
+      <span class="avatar">😀</span>
+      <span>أنت</span>
+    </div>
+  </div>
+
+  <div class="answers-table" id="answers-table">
+    <!-- Answer rows generated dynamically -->
+  </div>
+
+  <button class="complete-btn" id="complete-btn" onclick="onCompleteClick()">
+    🚌 أتوبيس كومبليت!
+  </button>
+</div>
+
+<!-- ============ REVIEW SCREEN ============ -->
+<div id="screen-review" class="screen">
+  <div class="app-header">
+    <h2 style="font-size:22px;color:var(--primary-dark);">مراجعة الإجابات</h2>
+    <p class="text-muted" style="font-size:14px;">راجع صحة الإجابات قبل احتساب النقاط</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">✏️ الإجابات تحت المراجعة</div>
+    <p class="text-muted" style="font-size:13px;margin-bottom:12px;">
+      اضغط ✓ للإجابة الصحيحة أو ✗ للإجابة الخاطئة. (الإجابات التي لا تبدأ بالحرف تُرفض تلقائيًا)
+    </p>
+    <div id="review-list"></div>
+  </div>
+
+  <button class="btn btn-primary btn-lg" onclick="confirmReview()">اعتماد النتيجة ✓</button>
+</div>
+
+<!-- ============ ROUND RESULTS ============ -->
+<div id="screen-results" class="screen">
+  <div class="app-header">
+    <h2 style="font-size:22px;color:var(--primary-dark);">نتائج الجولة</h2>
+    <p class="text-muted" style="font-size:14px;">الحرف: <b id="results-letter" style="color:var(--primary);"></b></p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📊 جدول الإجابات</div>
+    <div style="overflow-x:auto;">
+      <table class="results-table" id="results-table"></table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🏆 الترتيب الحالي</div>
+    <div class="scoreboard" id="scoreboard"></div>
+  </div>
+
+  <button class="btn btn-primary btn-lg" id="next-round-btn" onclick="nextRound()">الجولة التالية ←</button>
+</div>
+
+<!-- ============ FINAL RESULTS ============ -->
+<div id="screen-final" class="screen">
+  <div class="winner-card">
+    <div class="winner-trophy">🏆</div>
+    <div class="winner-title">الفائز</div>
+    <div class="winner-name" id="winner-name">—</div>
+    <div class="winner-score" id="winner-score">0 نقطة</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🏅 الترتيب النهائي</div>
+    <div class="scoreboard" id="final-scoreboard"></div>
+  </div>
+
+  <div class="card text-center">
+    <p style="font-weight:700;color:var(--primary-dark);">🎉 انتهت المباراة!</p>
+    <p class="text-muted" style="font-size:14px;margin-top:6px;" id="final-stats"></p>
+  </div>
+
+  <button class="btn btn-primary btn-lg" onclick="playAgain()">العب مرة أخرى 🔄</button>
+  <button class="btn btn-ghost btn-lg" style="margin-top:10px;" onclick="goHome()">العودة للرئيسية 🏠</button>
+</div>
+
+<!-- ============ DAILY CHALLENGE ============ -->
+<div id="screen-daily" class="screen">
+  <div class="flex-between" style="margin-bottom:12px;">
+    <button class="btn btn-ghost btn-sm" style="width:auto;padding:8px 14px;min-height:auto;" onclick="showScreen('screen-home')">← رجوع</button>
+    <h2 style="font-size:20px;color:var(--primary-dark);">التحدي اليومي 📅</h2>
+    <div style="width:60px;"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎯 تحدي اليوم</div>
+    <p style="font-size:14px;margin-bottom:10px;">حرف وفئات جديدة كل يوم مع نقاط إضافية!</p>
+    <div id="daily-info" style="text-align:center;padding:14px;background:#F3E8FF;border-radius:12px;margin:10px 0;">
+      <div class="text-muted" style="font-size:13px;">حرف اليوم</div>
+      <div style="font-size:60px;font-weight:900;color:var(--primary);" id="daily-letter">ا</div>
+      <div class="text-muted" style="font-size:12px;" id="daily-date"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">اسمك</label>
+      <input type="text" id="daily-player-name" class="form-input" placeholder="اكتب اسمك" maxlength="14">
+    </div>
+    <button class="btn btn-accent btn-lg" onclick="startDailyChallenge()">ابدأ التحدي 🎯</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 أفضل النتائج</div>
+    <div id="daily-leaderboard"></div>
+  </div>
+</div>
+
+<!-- ============ SETTINGS ============ -->
+<div id="screen-settings" class="screen">
+  <div class="flex-between" style="margin-bottom:12px;">
+    <button class="btn btn-ghost btn-sm" style="width:auto;padding:8px 14px;min-height:auto;" onclick="showScreen('screen-home')">← رجوع</button>
+    <h2 style="font-size:20px;color:var(--primary-dark);">الإعدادات</h2>
+    <div style="width:60px;"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔊 الصوت</div>
+    <div class="toggle-row">
+      <span>تفعيل المؤثرات الصوتية</span>
+      <div class="toggle on" id="toggle-sound" onclick="toggleSetting('sound', this)"></div>
+    </div>
+    <div class="toggle-row">
+      <span>الاهتزاز (الموبايل)</span>
+      <div class="toggle on" id="toggle-vibrate" onclick="toggleSetting('vibrate', this)"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⭐ نظام النقاط</div>
+    <div class="form-group">
+      <label class="form-label">نقاط الإجابة الفريدة الصحيحة</label>
+      <input type="number" id="setting-unique-pts" class="form-input" min="0" max="50" value="10">
+    </div>
+    <div class="form-group">
+      <label class="form-label">نقاط الإجابة المكررة (صحيحة)</label>
+      <input type="number" id="setting-shared-pts" class="form-input" min="0" max="50" value="5">
+    </div>
+    <div class="form-group">
+      <label class="form-label">نقاط الإجابة الخاطئة أو الفارغة</label>
+      <input type="number" id="setting-wrong-pts" class="form-input" min="-20" max="20" value="0">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎮 اللعب</div>
+    <div class="toggle-row">
+      <span>منح وقت إضافي بعد "أتوبيس كومبليت"</span>
+      <div class="toggle" id="toggle-grace" onclick="toggleSetting('grace', this)"></div>
+    </div>
+    <div class="form-group" style="margin-top:10px;">
+      <label class="form-label">مدة المهلة الإضافية (ثانية)</label>
+      <input type="number" id="setting-grace-sec" class="form-input" min="5" max="60" value="15">
+    </div>
+    <div class="toggle-row">
+      <span>استبعاد الحروف الصعبة (ث، ذ، ظ، ض)</span>
+      <div class="toggle on" id="toggle-easyletters" onclick="toggleSetting('easyletters', this)"></div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary btn-lg" onclick="saveSettings()">حفظ الإعدادات ✓</button>
+  <button class="btn btn-ghost" style="margin-top:10px;" onclick="resetSettings()">إعادة التعيين</button>
+</div>
+
+<!-- ============ HOW TO PLAY ============ -->
+<div id="screen-howto" class="screen">
+  <div class="flex-between" style="margin-bottom:12px;">
+    <button class="btn btn-ghost btn-sm" style="width:auto;padding:8px 14px;min-height:auto;" onclick="showScreen('screen-home')">← رجوع</button>
+    <h2 style="font-size:20px;color:var(--primary-dark);">كيف تلعب؟</h2>
+    <div style="width:60px;"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📖 القواعد</div>
+    <ol style="padding-right:20px;line-height:2;">
+      <li>يختار النظام حرفًا عربيًا عشوائيًا.</li>
+      <li>على كل لاعب كتابة كلمة لكل فئة تبدأ بالحرف المختار.</li>
+      <li>الفئات الافتراضية: ولد، بنت، حيوان، نبات، جماد، بلاد، أكل، مهنة.</li>
+      <li>عند الانتهاء، اضغط زر "أتوبيس كومبليت 🚌".</li>
+      <li>إذا انتهى الوقت، تُحفظ الإجابات المكتوبة فقط.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⭐ نظام النقاط</div>
+    <ul style="padding-right:20px;line-height:2;">
+      <li><b style="color:var(--success);">10 نقاط</b> للإجابة الصحيحة الفريدة (لم يكتبها أحد غيرك).</li>
+      <li><b style="color:var(--accent-dark);">5 نقاط</b> للإجابة الصحيحة المكررة عند أكثر من لاعب.</li>
+      <li><b style="color:var(--text-light);">0 نقطة</b> للإجابة الخاطئة أو الفارغة.</li>
+      <li>الإجابات التي لا تبدأ بالحرف تُرفض تلقائيًا.</li>
+      <li>يمكن مراجعة الإجابات يدويًا قبل اعتماد النتيجة.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎯 نصائح</div>
+    <ul style="padding-right:20px;line-height:2;">
+      <li>فكر في إجابات غير شائعة لتحصل على نقاط كاملة.</li>
+      <li>لا تضيع وقتك على فئة واحدة صعبة — انتقل لغيرها.</li>
+      <li>في اللعب الجماعي، التنوع في الإجابات يضمن لك التميز.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============ CONNECTING OVERLAY ============ -->
+<div id="connecting-overlay" class="modal-overlay">
+  <div class="modal text-center" style="max-width:340px;">
+    <div style="font-size:50px;margin-bottom:10px;">🌐</div>
+    <h3 id="connecting-title" style="color:var(--primary-dark);margin-bottom:10px;">جاري الاتصال...</h3>
+    <p class="text-muted" id="connecting-msg" style="font-size:14px;margin-bottom:14px;">يرجى الانتظار</p>
+    <div class="flex-center"><div class="loader" style="border-color:rgba(107,70,193,0.3);border-top-color:var(--primary);width:36px;height:36px;"></div></div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:14px;width:auto;" onclick="cancelConnecting()">إلغاء</button>
+  </div>
+</div>
+
+<!-- ============ TOAST CONTAINER ============ -->
+<div id="toast-container"></div>
+
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script>
+/* =====================================================
+   Bus Complete - منطق اللعبة
+   ===================================================== */
+
+// ============ الثوابت ============
+const ARABIC_LETTERS = ['ا','ب','ت','ث','ج','ح','خ','د','ذ','ر','ز','س','ش','ص','ض','ط','ظ','ع','غ','ف','ق','ك','ل','م','ن','ه','و','ي'];
+const HARD_LETTERS = ['ث','ذ','ظ','ض'];
+const EASY_LETTERS = ARABIC_LETTERS.filter(l => !HARD_LETTERS.includes(l));
+
+const ALL_CATEGORIES = [
+  { id: 'ولد', label: 'ولد', icon: '👦' },
+  { id: 'بنت', label: 'بنت', icon: '👧' },
+  { id: 'حيوان', label: 'حيوان', icon: '🦁' },
+  { id: 'نبات', label: 'نبات', icon: '🌿' },
+  { id: 'جماد', label: 'جماد', icon: '📦' },
+  { id: 'بلاد', label: 'بلاد', icon: '🌍' },
+  { id: 'أكل', label: 'أكل', icon: '🍎' },
+  { id: 'مهنة', label: 'مهنة', icon: '👨‍⚕️' },
+  { id: 'فيلم', label: 'فيلم', icon: '🎬' },
+  { id: 'لون', label: 'لون', icon: '🎨' },
+  { id: 'لاعب', label: 'لاعب', icon: '⚽' },
+  { id: 'علامة', label: 'علامة تجارية', icon: '🏷️' },
+  { id: 'فاكهة', label: 'فاكهة', icon: '🍇' },
+  { id: 'خضار', label: 'خضار', icon: '🥕' },
+  { id: 'جامعة', label: 'جامعة', icon: '🎓' },
+  { id: 'سيارة', label: 'سيارة', icon: '🚗' }
+];
+
+const DEFAULT_CATEGORY_IDS = ['ولد','بنت','حيوان','نبات','جماد','بلاد','أكل','مهنة'];
+
+const AVATARS = ['😀','😎','🤓','🥳','🦸','🦊','🐱','🐶','🦁','🐼','🦄','🐯','🦉','🐸','🐵','🐰'];
+
+const AI_NAMES = ['زياد','سارة','كريم','ليلى','عمر','نور','يوسف','هند','ماجد','رنا','طارق','دنيا','فهد','لمى','وليد','شهد'];
+
+// ============ قاموس الذكاء الاصطناعي ============
+// لكل حرف: قائمة كلمات لكل فئة
+const AI_DICTIONARY = {
+  'ا': {
+    'ولد': ['أحمد','أيمن','أشرف','أمجد','أنس','أكرم','أيوب','إبراهيم','إسماعيل','إياد','أسامة','أوس'],
+    'بنت': ['أمل','أروى','أسماء','آية','أليسار','أحلام','إيمان','إسراء','أسيل','أزهار','آلاء','أثير'],
+    'حيوان': ['أرنب','أسد','اخطبوط','أفعى','إوز','أبو بريص'],
+    'نبات': ['أرز','أوكاليبتوس','إبرة الراعي','أسفلتوس','آس'],
+    'جماد': ['إبرة','أنبوب','أثاث','إناء','أرجوحة','أسلحة','أسياخ','أمواج','إسفنج','أطلس'],
+    'بلاد': ['ألمانيا','الأردن','أمريكا','أفغانستان','أستراليا','الإمارات','إثيوبيا','إريتريا','إيطاليا','الجزائر','العراق','إندونيسيا','أوغندا','أنغولا'],
+    'أكل': ['أرز','أناناس','آيس كريم','أومليت','أبلة','عصير','أكل','تفاح','تمر هندي'],
+    'مهنة': ['أستاذ','إمام','إسكافي','إعلامي','إداري','أخصائي','أمين مكتبة','أرشيفر'],
+    'فاكهة': ['أناناس','أترجة','إجاص','تفاح','أنجاص'],
+    'خضار': ['أرض شوكي','أروولا','إندف'],
+    'لون': ['أزرق','أبيض','أصفر','أخضر','أحمر'],
+    'سيارة': ['أودي','ألفا روميو','استون مارتن'],
+    'جامعة': ['الأزهر','الإسكندرية','أسيوط','الأنبار'],
+    'لاعب': ['أحمد حسام','أشرف صبحي','أيمن أشرف'],
+    'فيلم': ['أبو علي','إبرايم الأبيض','الإرهاب والكباب'],
+    'علامة': ['أبل','أديداس','أرسيلة','ألعاب','أسوس']
+  },
+  'ب': {
+    'ولد': ['بدر','بسام','بكر','بلال','بخيت','براء','باسل','بوران','بشر','بندر'],
+    'بنت': ['بسمة','بثينة','بدور','براءة','بان','بشرى','بوسي','باهرة','بلسم','بيسان'],
+    'حيوان': ['بقرة','بطة','بغل','ببر','ببغاء','بغل','بومة','بق','بلطع'],
+    'نبات': ['بصل','بطاطا','بازلاء','بقدونس','بان','بامية','برتقال','بلوط','بوص','بيلسان'],
+    'جماد': ['بيت','باب','باخرة','برميل','بنك','بئر','بوصلة','بوص','بيانو','بوريا'],
+    'بلاد': ['البحرين','البرازيل','بريطانيا','بلغاريا','بوركينا فاسو','بنغلاديش','باكستان','بوتان','بوروندي','بلجيكا'],
+    'أكل': ['برغل','بسطيلة','بقلاوة','برياني','بطاطا','بسكويت','بيرة','بطيخ','برتقال'],
+    'مهنة': ['بائع','بستاني','بحار','برلماني','بائع متجول','بنّاء','بستان'],
+    'فاكهة': ['بطيخ','برتقال','بصل (هندي)','بلح','ببايا'],
+    'خضار': ['بصل','بطاطا','بازلاء','بقدونس','بامية','باذنجان'],
+    'لون': ['بني','بنفسجي','بيج'],
+    'سيارة': ['بي إم دبليو','بيجو','بنتلي','بوجاتي'],
+    'جامعة': ['بنها','بورسعيد','بنغازي'],
+    'لاعب': ['بدر المطرود','براهيم ديابي'],
+    'فيلم': ['البعض لا يذهب للمأذون مرتين','بوس كات'],
+    'علامة': ['بيبسي','بوكت','بنتون','بريتا']
+  },
+  'ت': {
+    'ولد': ['تامر','تقي','تامر','توفيق','تحسين','تركي','تاج','تامر'],
+    'بنت': ['تالا','تالا','تيسير','ترانيم','تالة','تغريد','تمارا','تولين'],
+    'حيوان': ['تمساح','تمساح','تعلب','ثعلب (تُنطق)','تميمة','تدرج','تنّ'],
+    'نبات': ['تفاح','تمر','تين','تفاح','طماطم','ترمس','تنّوب'],
+    'جماد': ['تفاحة','تابوت','تابل','تلفاز','تكييف','تخت','تنورة','تمثال','تور'],
+    'بلاد': ['تركيا','تايلاند','تونس','تايوان','تنزانيا','توغو','تركمانستان','توجو','ترينيداد'],
+    'أكل': ['تفاح','تمر','تين','تميس','تونة','تورلي','تفاح','بطاطا'],
+    'مهنة': ['طباخ','تاجر','تقني','ترجمان','تكنولوج','تدريسي'],
+    'فاكهة': ['تفاح','تين','تمر','توت','توت بري'],
+    'خضار': ['طماطم (تُنطق تماطم في بعض الدول)','تفاح'],
+    'لون': ['تراكوتا','تلكا','ترمز'],
+    'سيارة': ['تويوتا','تاتا','تيسلا'],
+    'جامعة': ['تشرين','تلكرج'],
+    'لاعب': ['تركي آل الشيخ','تشياباس'],
+    'فيلم': ['الترك','تيتانيك','تايجر'],
+    'علامة': ['تويتر','تويوتا','تاكسي','تيد']
+  },
+  'ث': {
+    'ولد': ['ثابت','ثامر','ثاقب','ثروت','ثمير'],
+    'بنت': ['ثريا','ثناء','ثناء','ثمينة','ثرة'],
+    'حيوان': ['ثعلب','ثعبان','ثور','ثعلب الماء'],
+    'نبات': ['ثوم','ثمر','ثمارة','ثمر الورد'],
+    'جماد': ['ثلاجة','ثريا','ثلج','ثقب','ثريا','ثريا (مصباح)'],
+    'بلاد': ['تايلاند (تُكتب ثاي أحياناً)'],
+    'أكل': ['ثوم','ثريد','ثمر'],
+    'مهنة': ['ثوّاب','ثبّات'],
+    'فاكهة': ['ثمر','ثمرة'],
+    'خضار': ['ثوم'],
+    'لون': ['ثريا'],
+    'سيارة': [],
+    'جامعة': [],
+    'لاعب': [],
+    'فيلم': [],
+    'علامة': []
+  },
+  'ج': {
+    'ولد': ['جاسم','جمال','جابر','جهاد','جلال','جلال','جدو','جبر','جهاد','جواد'],
+    'بنت': ['جنى','جمان','جميلة','جهاد','جواهر','جسر','جلنار','جود','جوري','جنى'],
+    'حيوان': ['جمل','جمل','جرد','جربوع','جراد','جرذ','جلد','جمل','حصان جر','جوارح'],
+    'نبات': ['جزر','جوافة','جوز','جوز الهند','جلبان','جميز','جقيقة','جعة'],
+    'جماد': ['جهاز','جدار','جرة','جنيه','جنزير','جهاز تلفاز','جبن','جاموس','جمس','جناح'],
+    'بلاد': ['الجزائر','جيبوتي','جورجيا','جرينلاند','جامايكا','اليابان (تُكتب Japan)','جنوب أفريقيا','جزر القمر','الأردن (المختصر JO)'],
+    'أكل': ['جبن','جوز','جوافة','جزر','جمبري','جبنة','جنوكتشي','جعة'],
+    'مهنة': ['جزار','جراح','جزّار','حارس (جرّاس)','جيولوجي','جرّاح أسنان'],
+    'فاكهة': ['جوافة','جوز','جوز الهند','جميز'],
+    'خضار': ['جزر','جلبان'],
+    'لون': ['جوزي','جلدي'],
+    'سيارة': ['جيب','جاغوار','جنرال موتورز'],
+    'جامعة': ['الجوف','الجزائر','جازان'],
+    'لاعب': ['جابرالكعبي','جمال مصطوى'],
+    'فيلم': ['جزيرة الذئاب','الجماعة','جوكر'],
+    'علامة': ['جوغال','جوجل','جاوا','جنرال إلكتريك']
+  },
+  'ح': {
+    'ولد': ['حسن','حسين','حمد','حازم','حبيب','حاتم','حارث','حليم','حيدر','حكمت'],
+    'بنت': ['حسن','حنان','حبيبة','حياة','حصة','هدى','هالة','حسناء','حوراء','حلا'],
+    'حيوان': ['حصان','حمل','حمار','حمام','حوت','حلوف','حجل','حوامة','حشرة','حرذون'],
+    'نبات': ['حناء','حبة البركة','حبق','حشيش','حندقوق','حنظل','حماض','حلفاء'],
+    'جماد': ['حذاء','حاسوب','حاسبة','حبل','حلوى','حمام','حظيرة','حبر','حائط','حقيبة'],
+    'بلاد': ['اليونان (Hellas/Halland)','هاييتي','هندوراس','المجر (Hungary)','فيتنام (Ha Noi)'],
+    'أكل': ['حلاوة','حليب','حمص','حلوى','حبة البركة','حريرة','حمام','حندية'],
+    'مهنة': ['حلاق','حداد','حراس','حارس','حاسب','حكم','حائك','حارس مرمى'],
+    'فاكهة': ['حماض','حنظل'],
+    'خضار': ['حمص','حماض','حلبة'],
+    'لون': ['حمراء','حمري'],
+    'سيارة': ['هيونداي (Hyundai- في بعض الدول تُنطق حيوندي)'],
+    'جامعة': ['حلوان','حضرموت'],
+    'لاعب': ['حسن شاذلي','حسين عبدالغني'],
+    'فيلم': ['الحرب العالمية','الحرافيش'],
+    'علامة': ['هوائي (Havai)','هيونداي','هايكن']
+  },
+  'خ': {
+    'ولد': ['خالد','خلف','خليل','خضر','خيرالله','خيرى','خالد','خشان'],
+    'بنت': ['خديجة','خلود','خاشعة','خيرية','خولة','خنساء'],
+    'حيوان': ['خروف','خنزير','خفاش','خيل','خنفساء','خلد','خربان'],
+    'نبات': ['خس','خيار','خوخ','خبيزة','خزامى','خروع','خروب','خشخاش','خزامي','خمان'],
+    'جماد': ['خاتم','خبز','خيمة','خزان','خزانة','خبطة','خريطة','خيط','خبز','خشب'],
+    'بلاد': ['الكويت (الخليج)','خراسان'],
+    'أكل': ['خبز','خوخ','خبيزة','خروب','خبيص','خل','خشكنينج'],
+    'مهنة': ['خباز','خراز','خياط','خفرجي','خفير'],
+    'فاكهة': ['خوخ','خربزة'],
+    'خضار': ['خس','خيار','خبيزة'],
+    'لون': ['خمري','خوخي'],
+    'سيارة': [],
+    'جامعة': ['الخرطوم'],
+    'لاعب': ['خالد عزيز','خالد البردعي'],
+    'فيلم': ['الخارجون','الخائن'],
+    'علامة': []
+  },
+  'د': {
+    'ولد': ['داود','دانة','دريد','دامر','دحام','داني','درويش','دريد','دعيج'],
+    'بنت': ['دانة','داليا','دعاء','دانية','دانيا','دلع','داليدا','دهنام'],
+    'حيوان': ['دب','دبابة','دجاج','دلفين','دودة','دود','دبور','دببة','دريل','دارج'],
+    'نبات': ['دخن','دموية','دوار الشمس','دخان','دوالية','دردار'],
+    'جماد': ['دار','دولاب','درج','دبابة','دراجة','دبابة','درع','دبوس','دولاب','دستة'],
+    'بلاد': ['الدنمارك','دجيبوتي','دومينيكا','الدومينيكان','رواندا (تُنطق د)'],
+    'أكل': ['دجاج','دوار','دونات','دمعة','دجاج','دبة'],
+    'مهنة': ['دكتور','دليل','دلال','دباغ','درّاس'],
+    'فاكهة': ['دراق','دمية'],
+    'خضار': ['دخن'],
+    'لون': ['دهني','دخاني'],
+    'سيارة': ['دودج','دايو','داتسون'],
+    'جامعة': ['دمشق','الدكادير'],
+    'لاعب': ['دانية كوبر','دروغبا'],
+    'فيلم': ['الدمار','دفر'],
+    'علامة': ['دوري','دولسي','دكتا']
+  },
+  'ذ': {
+    'ولد': ['ذكي','ذيب','ذرية'],
+    'بنت': ['ذكرى','ذرا'],
+    'حيوان': ['ذئب','ذباب','ذبابة','ذراع','ذكرة'],
+    'نبات': ['ذرة','ذنب الخيل'],
+    'جماد': ['ذهب','ذخيرة','ذيل','ذبذاب','ذكاء'],
+    'بلاد': [],
+    'أكل': ['ذرة','ذبيحة'],
+    'مهنة': ['ذباح','ذكي'],
+    'فاكهة': [],
+    'خضار': ['ذرة'],
+    'لون': [],
+    'سيارة': [],
+    'جامعة': [],
+    'لاعب': [],
+    'فيلم': [],
+    'علامة': []
+  },
+  'ر': {
+    'ولد': ['رامي','راكان','ربيع','راشد','رضا','رامز','رياض','رسول','رغد','رواد'],
+    'بنت': ['رنا','رؤى','رغد','رهف','رنا','رولى','راميا','رزان','ربى','رؤى'],
+    'حيوان': ['رنة','زرافة','رخمة','رقم (في بعض الدول)','رحيق','رجولة','دجاج (رجلة)','رمكة','رعل','روبيان'],
+    'نبات': ['رمان','رمان','رند','رعي','رويبة','راسن','ردودة','رخام'],
+    'جماد': ['راديو','رسيفر','رصاصة','رمال','رجلة','رشاشة','رخام','رئة','رسيفر','رمانة'],
+    'بلاد': ['روسيا','رواندا','رومانيا','الرياض','زيمبابوي (Rhodesia سابقًا)'],
+    'أكل': ['رمان','رز','روبيان','رشة','رقاق','رشتة','رز بحليب'],
+    'مهنة': ['راعي','رئيس','رسّام','ركّاب','رجل إطفاء','رئيس بلدية'],
+    'فاكهة': ['رمان','رقي (بطيخ)'],
+    'خضار': ['روكا','راسن','رضاب'],
+    'لون': ['وردي (في بعض اللهجات)','رمادي'],
+    'سيارة': ['رينج روفر','رام'],
+    'جامعة': ['الرياض','الرشت'],
+    'لاعب': ['رامي عاشور','رؤوف خليف'],
+    'فيلم': ['الرسالة','رامبو'],
+    'علامة': ['رولكس','ريد بُل','رابيد']
+  },
+  'ز': {
+    'ولد': ['زياد','زاهر','زكريا','زكي','زعيم','زهران','زين','زمزم','زاهر'],
+    'بنت': ['زينب','زهراء','زاهية','زمزم','زين','زوزو','زكية','زهرة'],
+    'حيوان': ['زرافة','زرزور','زواحف','زبابة','زنبور','زقزاق','زرافة','زرزور','زاحفة'],
+    'نبات': ['زهر','زيتون','زعتر','زبيدة','زبدة','زعفران','زيزفون','زقوم','زرافة'],
+    'جماد': ['زجاج','زبدة','زيت','زجاجة','زهرة','زقاق','زورق','زحافة','زحليقة','زمام'],
+    'بلاد': ['زامبيا','زيمبابوي','الزير','السنغال (Dakar)'],
+    'أكل': ['زبيب','زيتون','زعتر','زبدة','زبيب','زبدة','زعفران'],
+    'مهنة': ['زرّاع','زيات','زرّاد','زيار'],
+    'فاكهة': ['زبيب','زعرور'],
+    'خضار': ['زعتر','زبيدة','زبدة'],
+    'لون': ['زيتي','زمردي'],
+    'سيارة': [],
+    'جامعة': ['الزرقاء'],
+    'لاعب': ['زياد مبارك','زين الدين'],
+    'فيلم': ['الزعيم','زورو'],
+    'علامة': ['زارا','زيركس','زيروكس']
+  },
+  'س': {
+    'ولد': ['سامي','سعيد','سلطان','سعود','سامر','سيف','ساري','سلام','سرمد','سهران'],
+    'بنت': ['سارة','سلمى','سمر','سوسن','سعاد','سهام','سناء','سحر','سلاف','سوسو'],
+    'حيوان': ['سلحفاة','سمكة','سحلية','سنجاب','سبع','سحلية','سلوقي','سرد','سمان','سحاب'],
+    'نبات': ['سرو','سدر','سفرجل','سنا','سحلب','سلق','سلق','سوسن','سذاب'],
+    'جماد': ['سيارة','ساعة','سيف','ساحة','ساقية','سجاد','سلّم','سلة','ساطور','سطح'],
+    'بلاد': ['السعودية','السودان','سوريا','السويد','سويسرا','سنغافورة','سلطنة عمان','سنغال','سيريلانكا','سلفادور','صوماليا'],
+    'أكل': ['سمك','سلطة','سفرجل','سلك','سمبوسة','سحلب','سميد','شاي (يُقال سبتشاي)'],
+    'مهنة': ['سائق','ساعاتي','سمسار','سقا','سمان','سبّاك','صيدلي'],
+    'فاكهة': ['سفرجل','سمّاك'],
+    'خضار': ['سلق','سلك','سفرجل'],
+    'لون': ['سماوي','سينا','سديمي'],
+    'سيارة': ['سكودا','سوزوكي','سباسيرو','سيات'],
+    'جامعة': ['سيئون','السودان'],
+    'لاعب': ['سامي الجابر','سواريز'],
+    'فيلم': ['سايلنت هيل','الساحر'],
+    'علامة': ['سامسونج','سوني','سوباوي','ستاربكس']
+  },
+  'ش': {
+    'ولد': ['شريف','شاهر','شعبان','شادي','شاكر','شهاب','شكري','شبيب','شامل'],
+    'بنت': ['شهد','شيرين','شيماء','شذا','شهد','شمس','شريفة','شاكرة','شوق'],
+    'حيوان': ['شاة','شبل','شيمبانزي','شطب','شبل','شبح','شعشعان','شبوط'],
+    'نبات': ['شعير','شوفان','شبت','شيح','شمر','شجرة','شلوطة','شطة','شيكوريا'],
+    'جماد': ['شمسية','شبكة','شارع','شاحنة','شباك','شمعة','شريط','شوكة','شاحون','شاشة'],
+    'بلاد': ['الشيلي','الصين (Shina قديمًا)','شنغهاي','جيبوتي (في الشرق)'],
+    'أكل': ['شاي','شوربة','شاورما','شعيرية','شكولاتة','شباكية','شيرية','شاكر'],
+    'مهنة': ['شاعر','شيف','شرطي','شغّال','شاهد','شبّاك','شارح'],
+    'فاكهة': ['شمام','شندر','شليك','شمام'],
+    'خضار': ['شبت','شوفان','شمر','شيكوريا'],
+    'لون': ['شمبانيا','شوكولاتي','شهابي'],
+    'سيارة': ['شيفورليه'],
+    'جامعة': ['الشرق','الشلف'],
+    'لاعب': ['شرف الكربي','شكري الحشاد'],
+    'فيلم': ['الشاطر حسن','شريك'],
+    'علامة': ['شالوم','شبكة','شارك']
+  },
+  'ص': {
+    'ولد': ['صالح','صبري','صادق','صفوان','صهيب','صخر','صلاح','صفا','صدّام'],
+    'بنت': ['صابرين','صبا','صفا','صفية','صهف','صدى','صمت','صبا','صفا'],
+    'حيوان': ['صقر','صحراء','صرصور','صبر','صرد','صحار','صبور'],
+    'نبات': ['صبار','صفصاف','صمغ','صندل','صرح','صنوبر','صعتر','صبر'],
+    'جماد': ['صابون','صاروخ','صحن','صرة','صحراء','صارية','صندوق','صاري','صهريج','صومعة'],
+    'بلاد': ['الصومال','الصين'],
+    'أكل': ['صابون','صلصة','صفيحة','صفائح','صبر','صفائح لحم'],
+    'مهنة': ['صبّاغ','صانع','صيدلي','صحفي','صائغ','صبّار','صفائحي'],
+    'فاكهة': ['صبر','صفصافة'],
+    'خضار': ['صلصل','صمغ','صفصاف'],
+    'لون': ['صحراوي','صيني','صفروي','صحرائي'],
+    'سيارة': [],
+    'جامعة': ['صنعاء','صيدا'],
+    'لاعب': ['صالح النعيمة','صالح شاهين'],
+    'فيلم': ['الصامتون','الصحراء'],
+    'علامة': ['صن','صبوي']
+  },
+  'ض': {
+    'ولد': ['ضياء','ضيائي','ضحّاك'],
+    'بنت': ['ضياء','ضحى'],
+    'حيوان': ['ضفدع','ضبع','ضب','ضأن'],
+    'نبات': ['ضرو','ضرم','ضروس'],
+    'جماد': ['ضباب','ضريح','ضوء','ضلع','ضرس','ضمادة'],
+    'بلاد': [],
+    'أكل': ['ضأن','ضبان'],
+    'مهنة': ['ضارب','ضارب الجزارة'],
+    'فاكهة': [],
+    'خضار': [],
+    'لون': [],
+    'سيارة': [],
+    'جامعة': [],
+    'لاعب': [],
+    'فيلم': [],
+    'علامة': []
+  },
+  'ط': {
+    'ولد': ['طارق','طالب','طاهر','طيبة','طيّب','طلال','طه','طموح'],
+    'بنت': ['طاهرة','طيبة','طيوف','طموحة','طيف','طلالة','طُهى'],
+    'حيوان': ['طاووس','طبّاع','طيور','طرغبان','طرسون','طحينية','طحلب','طنّان','طيور'],
+    'نبات': ['طماطم','طحلب','طرفة','طحينة','طرخون','طرفاء'],
+    'جماد': ['طائرة','طاولة','طبق','طبل','طاقية','طرحة','طاقة','طائرة','طبر','طُنبر'],
+    'بلاد': ['طاجيكستان','طوغو'],
+    'أكل': ['طماطم','طحينة','طبق','طعام','طربونة'],
+    'مهنة': ['طبيب','طباخ','طيار','طالب','طبيب أسنان','طبيب أطفال'],
+    'فاكهة': ['طرفة','طمسك','طماطم'],
+    'خضار': ['طماطم','طرخون','طرفة'],
+    'لون': ['طلوبي','طوبي'],
+    'سيارة': [],
+    'جامعة': ['طرابلس','طنطا'],
+    'لاعب': ['طارق التايب','طارق حسن'],
+    'فيلم': ['الطريق','طير أحمر'],
+    'علامة': []
+  },
+  'ظ': {
+    'ولد': ['ظافر','ظاهر','ظريف'],
+    'بنت': ['ظريفة','ظبية'],
+    'حيوان': ['ظبي','ظبيان','ظئر'],
+    'نبات': ['ظيان','ظهران'],
+    'جماد': ['ظرف','ظل','ظبية','ظفر','ظلة','ظهور'],
+    'بلاد': [],
+    'أكل': [],
+    'مهنة': ['ظريف','ظباط'],
+    'فاكهة': [],
+    'خضار': [],
+    'لون': [],
+    'سيارة': [],
+    'جامعة': [],
+    'لاعب': [],
+    'فيلم': [],
+    'علامة': []
+  },
+  'ع': {
+    'ولد': ['عمر','علي','عبدالله','عثمان','عامر','عادل','عزة','عباس','عاصم','عرفات'],
+    'بنت': ['عائشة','عربية','علا','عبير','عزة','عفاف','عهد','عنبر','عالية','عشيّة'],
+    'حيوان': ['عصفور','عقرب','عجل','عظاية','عقاب','عنزة','عندليب','عثة','عرس'],
+    'نبات': ['عنب','عصفر','عتر','عود','عرعر','عنّاب','عرفج','عبّاد'],
+    'جماد': ['عجلة','عصا','علم','عقار','عقد','عطر','عربة','عجينة','عصا','عقد'],
+    'بلاد': ['عمان','فلسطين (العربية) ','عُمان'],
+    'أكل': ['عنب','عجينة','علكة','عسل','عصير','عرس','عجة','عيش'],
+    'مهنة': ['عامل','عالم','عسكري','عريف','عطار','عامل نظافة','عامل بناء'],
+    'فاكهة': ['عنب','عنّاب','عنبر'],
+    'خضار': ['عصفر','عتر','عرعر'],
+    'لون': ['عنابي','عسلي'],
+    'سيارة': ['عجلة (في بعض اللهجات)'],
+    'جامعة': ['عين شمس','عجمان'],
+    'لاعب': ['عمر السومة','عبدالله سيسوكو'],
+    'فيلم': ['العمر','العقرب'],
+    'علامة': ['عربيات','عربيا']
+  },
+  'غ': {
+    'ولد': ['غازي','غسان','غالب','غيث','غدير','غالب'],
+    'بنت': ['غادة','غيداء','غراء','غصون','غالية','غدير'],
+    'حيوان': ['غزال','غراب','غزال','غوريلا','غزال','غرفان'],
+    'نبات': ['غار','غبيراء','غضا','غبيراء'],
+    'جماد': ['غرفة','غسالة','غطاء','غرفة','غربة','غلاف','غزال','غرفة','غيض'],
+    'بلاد': ['غانا','غينيا','غواتيمالا','غامبيا','غينيا بيساو'],
+    'أكل': ['غريبة','غسلين','غطاء','غمبري'],
+    'مهنة': ['غسّال','غوّاص','غفير'],
+    'فاكهة': ['غبيراء','عنب (مثلّج)'],
+    'خضار': ['غار','غبيراء'],
+    'لون': ['غبراوي','زيتي'],
+    'سيارة': [],
+    'جامعة': ['غرداية','الغريب'],
+    'لاعب': ['غازي قديوري','غيلرمو'],
+    'فيلم': ['الغريب','الغولة'],
+    'علامة': []
+  },
+  'ف': {
+    'ولد': ['فهد','فيصل','فاروق','فادي','فؤاد','فاخر','فلاح','فتحي','فخر'],
+    'بنت': ['فاطمة','فريال','فدوى','فادية','فوزية','فلة','فجر','فريد','فادية'],
+    'حيوان': ['فأر','فيل','فهد','فراشة','فرس','فراشة','فروج','فكهة','فأر'],
+    'نبات': ['فول','فلفل','فراولة','فجل','فستق','فل','فصة','فلفل حار'],
+    'جماد': ['فأس','فنجان','فأس','فرن','فرشاة','فأس','فرشاة','فنجان','فأس','فلم'],
+    'بلاد': ['فرنسا','الفلبين','فنلندا','فنزويلا','فيتنام','فجيرة','فلسطين'],
+    'أكل': ['فول','فلافل','فلفل','فراولة','فطيرة','فول','فول سوداني','فول'],
+    'مهنة': ['فنان','فلاح','فرّان','فكاهي','فنان','فرّان','فني'],
+    'فاكهة': ['فراولة','فستق','فل','فاكهة'],
+    'خضار': ['فجل','فلفل','فول','فصة'],
+    'لون': ['فستقي','فحمي','فضي'],
+    'سيارة': ['فيراري','فورد','فيات','فولكس فاجن'],
+    'جامعة': ['الفيوم','فاس'],
+    'لاعب': ['فهد المولد','فالكون'],
+    'فيلم': ['الفهد','الفرعون'],
+    'علامة': ['فيسبوك','فيري','فودافون']
+  },
+  'ق': {
+    'ولد': ['قاسم','قيس','قحطان','قتادة','قبلان','قنبس','قحطان'],
+    'بنت': ['قمر','قبسة','قمر','قلب','قطز'],
+    'حيوان': ['قطة','قط','قرد','قنفذ','قيقاق','قطرس','قبرصة'],
+    'نبات': ['قصب','قنية','قصب السكر','قضاب','قلة','قثاء','قصعين'],
+    'جماد': ['قلم','قدر','قارب','قبعة','قارورة','قفل','قائمة','قنديل','قش','قفص'],
+    'بلاد': ['قطر','قبرص','كازاخستان (في بعض الدول تُكتب قازاخستان)'],
+    'أكل': ['قمح','قشدة','قمر الدين','قطايف','قلوبة','قشدة','قهوة'],
+    'مهنة': ['قصّاب','قاضي','قاوقجي','قفّاز','قبّان'],
+    'فاكهة': ['قثاء','قشطة'],
+    'خضار': ['قصب','قثاء','قصعين'],
+    'لون': ['قرمزي','قهوي'],
+    'سيارة': [],
+    'جامعة': ['القاهرة','القدس'],
+    'لاعب': ['قاسم غانم','كأس الأمير'],
+    'فيلم': ['القاهرة 30','القفلة'],
+    'علامة': ['كانون','قوتاب','قوة']
+  },
+  'ك': {
+    'ولد': ['كريم','كمال','كاظم','كثير','كريم','كنعان','كاسب','كهلن','كوكب'],
+    'بنت': ['كريمة','كوثر','كنان','كاميليا','كلوديا','كوثر','كريمة','كوكتيل'],
+    'حيوان': ['كلب','كبش','كركدن','كتكوت','كوبرا','كوليا','كناري','كلب البحر'],
+    'نبات': ['كرنب','كرز','كمون','كركم','كزبرة','كستناء','كمثرى','كبّار','كافور'],
+    'جماد': ['كتاب','كوب','كرة','كوب','كابل','كعكة','كرسي','كبريت','كابل','كف'],
+    'بلاد': ['كندا','كوبا','كولومبيا','كينيا','كوريا','الكويت','كازاخستان','كمبوديا','كرواتيا'],
+    'أكل': ['كباب','كعك','كفتة','كرز','كمون','كشري','كنافة','كبة','كوكيز'],
+    'مهنة': ['كاتب','كاشير','كاسب','كهربائي','كرّاب','كوافير'],
+    'فاكهة': ['كرز','كمثرى','كستناء','كاكا'],
+    'خضار': ['كرنب','كزبرة','كمون','كرفس','كبّار'],
+    'لون': ['كهرماني','كاكاوي'],
+    'سيارة': ['كيا','كاديلاك'],
+    'جامعة': ['الكويت','كربلاء'],
+    'لاعب': ['كريم بنزيما','كاسيس'],
+    'فيلم': ['الكبير','كوكو'],
+    'علامة': ['كوكا كولا','كوانتم','كانون']
+  },
+  'ل': {
+    'ولد': ['ليث','لواء','لمين','لؤي','لطفي','لقمان','ليث','لطفي','لبيب'],
+    'بنت': ['لمياء','لميس','لينا','ليلى','لارا','لجين','لؤلؤة','لطيفة','ليان','ليلى'],
+    'حيوان': ['لبؤة','لص','لقطة','لقلق','لحمي','لقلق','لقالق'],
+    'نبات': ['ليمون','لوبيا','لفت','لوز','لبلاب','لبلاب','لوز','لصف'],
+    'جماد': ['لقمة','لمبة','لوحة','لعبة','لوح','لقطة','لسان','لفافة','لمبة','لسّان'],
+    'بلاد': ['لبنان','ليبيا','لاتفيا','ليبيريا','ليتوانيا','لاوس','ليختنشتاين'],
+    'أكل': ['ليمون','لبن','لوبيا','لفت','لوز','لبناني','لحم','لقم','لحم'],
+    'مهنة': ['لحام','لاعب','لغوي','لغوي'],
+    'فاكهة': ['ليمون','لوز','لعلق'],
+    'خضار': ['لوبيا','لفت','لبلاب','لصف'],
+    'لون': ['ليموني','لازوردي','ليلكي'],
+    'سيارة': ['لادا','لانشا','لينكون'],
+    'جامعة': ['لبنان','لارناكا'],
+    'لاعب': ['لويس سواريز','ليونيل ميسي'],
+    'فيلم': ['اللبؤة','اللص'],
+    'علامة': ['لوريال','لينكدإن','لجنت']
+  },
+  'م': {
+    'ولد': ['محمد','مصطفى','ماجد','ماهر','مروان','مراد','مازن','منذر','منصور','ممدوح'],
+    'بنت': ['مريم','منى','مها','ميس','ميساء','منيرة','مصونة','ميس','منال','ميار'],
+    'حيوان': ['مها','ماعز','موريل','ذئب (مذأب)','دب (مدب)','مائر','مها','ماعز'],
+    'نبات': ['موز','ملفوف','مرمية','ميزة','مقدونس','نعناع (نعناع)','موز','ميزة'],
+    'جماد': ['مفتاح','مكنسة','مروحة','منزل','ميزان','مصباح','مسجد','مدرسة','منشار','منديل'],
+    'بلاد': ['المغرب','مصر','ماليزيا','مالي','مدغشقر','موزمبيق','مولدوفا','منغوليا','موريتانيا','مالطا'],
+    'أكل': ['موز','ملفوف','مكرونة','محشي','مقلوبة','منسف','موز','مرق','مهلبية'],
+    'مهنة': ['مهندس','ممرض','محامي','معلم','مدير','ميكانيكي','مزارع','مصور','موسيقي'],
+    'فاكهة': ['موز','مشمش','مانجو','موز'],
+    'خضار': ['ملفوف','مرمية','مقدونس','ميزة'],
+    'لون': ['موف','موزي','مرجاني'],
+    'سيارة': ['مازدا','مرسيدس','ميني','ماكلارين'],
+    'جامعة': ['الموصل','المثنى','مكناس'],
+    'لاعب': ['محمد صلاح','ميسي','ماجد عبدالله'],
+    'فيلم': ['المملكة','الممر'],
+    'علامة': ['ماكدونالدز','متا','ماستركارد']
+  },
+  'ن': {
+    'ولد': ['نواف','ناصر','نادر','نبيل','نزار','نهاد','نمر','نصار','نسيم','نور'],
+    'بنت': ['نورة','نور','نادية','نسرين','نوال','نهى','نبيلة','نورا','نغم','نسمة'],
+    'حيوان': ['نملة','نعجة','نعامة','نحلة','نسر','نمر','نوّار','نُعامة'],
+    'نبات': ['نعناع','نخيل','نرجس','نخلة','ناعمة','نفل','نسرين','نيلة'],
+    'جماد': ['ناي','نافذة','نار','نشارة','نشرة','نقالة','نجمة','نص','نبضة','نشّابة'],
+    'بلاد': ['النرويج','نيبال','نيجيريا','نيكاراغوا','ناميبيا','نيوزيلندا','نيجر','ناورو'],
+    'أكل': ['نعناع','نخيل','نارجيل','نقانق','نشا','نقل','نعناع'],
+    'مهنة': ['نحّال','نجار','نقّاش','نوّات','نسّاج'],
+    'فاكهة': ['نرجس','ناعمة','نخالة'],
+    'خضار': ['نعناع','نفل','نخالة'],
+    'لون': ['نحاسي','نيلي','نرجسي'],
+    'سيارة': [],
+    'جامعة': ['نزوى','النجف'],
+    'لاعب': ['نواف العتيبي','نجم الدين'],
+    'فيلم': ['النمر','النهاية'],
+    'علامة': ['نايك','نيسان','نوتيلا']
+  },
+  'ه': {
+    'ولد': ['هاني','هشام','هادي','هيثم','هارون','هذال','هذيل'],
+    'بنت': ['هالة','هبة','هند','هدى','هناء','هاجر','هيام','هذال','هيفاء'],
+    'حيوان': ['هدهد','هرة','هرّ','هدبي','هريرة','هرة'],
+    'نبات': ['هليون','هليلك','هليون','هدال','هال','هليلج'],
+    'جماد': ['هاتف','هرم','هدية','هواء','هوائي','هيدروليك','هلال','همزة','هيكل'],
+    'بلاد': ['هولندا','هندوراس','هاييتي','هنغاريا'],
+    'أكل': ['هليون','هلال','هليلج','هريسة','هريسة','هليلج'],
+    'مهنة': ['هرّاس','هامي'],
+    'فاكهة': ['هليلك'],
+    'خضار': ['هليون','هليون'],
+    'لون': ['هليلجي','هالي'],
+    'سيارة': [],
+    'جامعة': [],
+    'لاعب': ['هياثم'],
+    'فيلم': ['الهارب','الهلال'],
+    'علامة': ['هيوليت باكارد','هيرشي']
+  },
+  'و': {
+    'ولد': ['وليد','وسيم','وحيد','وجدي','وجيه','وليد','وشاح','وديع','ورد'],
+    'بنت': ['وفاء','ورود','ولاء','وجدان','وردة','وسام','وضحى','وريدة','وفية'],
+    'حيوان': ['وحش','ورل','وردية','وزغة','وحش','وضّاح','وعل','وبير'],
+    'نبات': ['ورد','وردة','ورق','ورل','ورد','ورد','وسنة','وعلة'],
+    'جماد': ['وردة','ورقة','وصلة','وصية','ورطة','وطن','وحمة','وعاء','وسادة','وصلة'],
+    'بلاد': ['الوايت','اليمن (WY)','أوزبكستان'],
+    'أكل': ['ورق','ورد','ورق العنب','ورقة','وصال'],
+    'مهنة': ['ورّاق','وكييل','وكيل','وزّان','واعظ'],
+    'فاكهة': ['ورد','ورق','وردة'],
+    'خضار': ['ورق','ورد','ورل'],
+    'لون': ['وردي','وردي','وردي'],
+    'سيارة': [],
+    'جامعة': ['وادي','واشنطن'],
+    'لاعب': ['وسيم بوزيد','وليد الجازع'],
+    'فيلم': ['الواد','الوحش'],
+    'علامة': ['واتساب','والت ديزني']
+  },
+  'ي': {
+    'ولد': ['ياسر','يوسف','يزن','يزيد','يحيى','يعرب','يسار','ياسين','يوسف'],
+    'بنت': ['يسرى','ياسمين','يارا','يافا','ياسمين','يسرى','يانا','يافا','ياسمين'],
+    'حيوان': ['يعسوب','يمامة','يعبوب','يربوع','يعر','يراعة'],
+    'نبات': ['ياسمين','يلنجوج','ياسمين','ياس','ياس','ينسون','يبروح'],
+    'جماد': ['ياقوت','يخت','ياقوت','ياقة','يخت','ياقوت','يخنة','يشم'],
+    'بلاد': ['اليمن','اليابان','يوروغواي (في بعض اللهجات)'],
+    'أكل': ['يخنة','يلنجوج','يسمن','ينسون','يبروح'],
+    'مهنة': ['يخوت','يخت'],
+    'فاكهة': ['ياسمين','يلنجوج'],
+    'خضار': ['يلنجوج','ينسون'],
+    'لون': ['ياقوتي','ياسميني'],
+    'سيارة': [],
+    'جامعة': ['اليرموك','إب'],
+    'لاعب': ['ياسين بونو','يوسف العربي'],
+    'فيلم': ['اليازجي','الياسمين'],
+    'علامة': ['ياماشيتا','ياسين']
+  }
+};
+
+// ============ حالة اللعبة ============
+let state = {
+  mode: null, // 'single', 'local', 'online'
+  difficulty: 'easy',
+  players: [], // [{id, name, avatar, isHost, isAI, score, roundAnswers, roundScore, totalScore, connected}]
+  categories: [...DEFAULT_CATEGORY_IDS],
+  currentLetter: null,
+  usedLetters: [],
+  currentRound: 0,
+  totalRounds: 5,
+  roundDuration: 60,
+  timeLeft: 0,
+  phase: 'home',
+  roundInProgress: false,
+  currentPlayerIndex: 0, // for local pass-and-play
+  settings: {
+    sound: true,
+    vibrate: true,
+    uniquePts: 10,
+    sharedPts: 5,
+    wrongPts: 0,
+    grace: false,
+    graceSec: 15,
+    easyletters: true
+  },
+  // Online
+  peer: null,
+  connections: [],
+  roomCode: null,
+  isHost: false,
+  myPlayerId: null,
+  // Timer
+  timerInterval: null,
+  // AI answers
+  aiAnsweredThisRound: false,
+  // Daily
+  dailyDate: null,
+  // Validation overrides
+  reviewOverrides: {}
+};
+
+// ============ الصوت (Web Audio API) ============
+const sound = {
+  ctx: null,
+  init() {
+    if (!this.ctx) {
+      try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+  },
+  play(freq, duration = 0.15, type = 'sine', volume = 0.3) {
+    if (!state.settings.sound) return;
+    this.init();
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.value = volume;
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + duration);
+  },
+  beep() { this.play(800, 0.1, 'sine', 0.2); },
+  success() { this.play(523, 0.1); setTimeout(() => this.play(659, 0.1), 100); setTimeout(() => this.play(784, 0.2), 200); },
+  error() { this.play(200, 0.3, 'sawtooth', 0.2); },
+  tick() { this.play(1200, 0.05, 'square', 0.1); },
+  letter() { this.play(440, 0.1); setTimeout(() => this.play(554, 0.1), 100); setTimeout(() => this.play(659, 0.15), 200); },
+  complete() { 
+    this.play(523, 0.1); 
+    setTimeout(() => this.play(659, 0.1), 100); 
+    setTimeout(() => this.play(784, 0.1), 200); 
+    setTimeout(() => this.play(1047, 0.3), 300);
+  },
+  win() {
+    const notes = [523, 659, 784, 1047, 1319];
+    notes.forEach((n, i) => setTimeout(() => this.play(n, 0.2, 'triangle', 0.3), i * 150));
+  }
+};
+
+function vibrate(ms) {
+  if (state.settings.vibrate && navigator.vibrate) {
+    try { navigator.vibrate(ms); } catch(e) {}
+  }
+}
+
+// ============ Toast ============
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => {
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 300);
+  }, 2500);
+}
+
+// ============ إدارة الشاشات ============
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+  state.phase = id.replace('screen-', '');
+}
+
+// ============ الإعدادات ============
+function loadSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('buscomplete-settings') || '{}');
+    Object.assign(state.settings, saved);
+  } catch(e) {}
+  // Apply to UI
+  document.getElementById('toggle-sound').classList.toggle('on', state.settings.sound);
+  document.getElementById('toggle-vibrate').classList.toggle('on', state.settings.vibrate);
+  document.getElementById('toggle-grace').classList.toggle('on', state.settings.grace);
+  document.getElementById('toggle-easyletters').classList.toggle('on', state.settings.easyletters);
+  document.getElementById('setting-unique-pts').value = state.settings.uniquePts;
+  document.getElementById('setting-shared-pts').value = state.settings.sharedPts;
+  document.getElementById('setting-wrong-pts').value = state.settings.wrongPts;
+  document.getElementById('setting-grace-sec').value = state.settings.graceSec;
+}
+
+function saveSettings() {
+  state.settings.uniquePts = parseInt(document.getElementById('setting-unique-pts').value) || 10;
+  state.settings.sharedPts = parseInt(document.getElementById('setting-shared-pts').value) || 5;
+  state.settings.wrongPts = parseInt(document.getElementById('setting-wrong-pts').value) || 0;
+  state.settings.graceSec = parseInt(document.getElementById('setting-grace-sec').value) || 15;
+  localStorage.setItem('buscomplete-settings', JSON.stringify(state.settings));
+  sound.success();
+  toast('تم حفظ الإعدادات ✓', 'success');
+}
+
+function resetSettings() {
+  if (!confirm('إعادة تعيين كل الإعدادات؟')) return;
+  localStorage.removeItem('buscomplete-settings');
+  state.settings = {
+    sound: true, vibrate: true,
+    uniquePts: 10, sharedPts: 5, wrongPts: 0,
+    grace: false, graceSec: 15, easyletters: true
+  };
+  loadSettings();
+  toast('تمت إعادة التعيين', 'info');
+}
+
+function toggleSetting(key, el) {
+  state.settings[key] = !state.settings[key];
+  el.classList.toggle('on', state.settings[key]);
+  localStorage.setItem('buscomplete-settings', JSON.stringify(state.settings));
+}
+
+// ============ تحميل اسم اللاعب ============
+function loadPlayerName() {
+  const name = localStorage.getItem('buscomplete-playername') || '';
+  const avatar = localStorage.getItem('buscomplete-avatar') || '😀';
+  document.getElementById('setup-player-name').value = name;
+  document.getElementById('online-player-name').value = name;
+  document.getElementById('daily-player-name').value = name;
+  return { name, avatar };
+}
+
+function savePlayerName(name, avatar) {
+  localStorage.setItem('buscomplete-playername', name);
+  if (avatar) localStorage.setItem('buscomplete-avatar', avatar);
+}
+
+// ============ اختيار الصورة الرمزية ============
+let selectedAvatar = '😀';
+function initAvatarPicker(elementId) {
+  const container = document.getElementById(elementId);
+  if (!container) return;
+  container.innerHTML = '';
+  const savedAvatar = localStorage.getItem('buscomplete-avatar') || '😀';
+  selectedAvatar = savedAvatar;
+  AVATARS.forEach(av => {
+    const el = document.createElement('div');
+    el.className = 'avatar-option' + (av === savedAvatar ? ' active' : '');
+    el.textContent = av;
+    el.onclick = () => {
+      container.querySelectorAll('.avatar-option').forEach(o => o.classList.remove('active'));
+      el.classList.add('active');
+      selectedAvatar = av;
+      savePlayerName('', av);
+    };
+    container.appendChild(el);
+  });
+}
+
+// ============ اختيار الفئات ============
+function initCategoryGrid(elementId = 'category-grid') {
+  const grid = document.getElementById(elementId);
+  if (!grid) return;
+  grid.innerHTML = '';
+  ALL_CATEGORIES.forEach(cat => {
+    const el = document.createElement('button');
+    el.className = 'category-chip' + (state.categories.includes(cat.id) ? ' active' : '');
+    el.innerHTML = `${cat.icon} ${cat.label}`;
+    el.onclick = () => {
+      el.classList.toggle('active');
+      // Update state
+      const id = cat.id;
+      if (el.classList.contains('active')) {
+        if (!state.categories.includes(id)) state.categories.push(id);
+      } else {
+        state.categories = state.categories.filter(c => c !== id);
+      }
+    };
+    grid.appendChild(el);
+  });
+}
+
+function selectAllCategories(select, gridId = 'category-grid') {
+  const grid = document.getElementById(gridId);
+  grid.querySelectorAll('.category-chip').forEach((el, i) => {
+    el.classList.toggle('active', select);
+  });
+  if (select) {
+    state.categories = ALL_CATEGORIES.map(c => c.id);
+  } else {
+    state.categories = [];
+  }
+}
+
+function resetCategories(gridId = 'category-grid') {
+  state.categories = [...DEFAULT_CATEGORY_IDS];
+  initCategoryGrid(gridId);
+}
+
+// ============ Chips helpers ============
+function initChips(containerId, callback) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.querySelectorAll('.chip').forEach(chip => {
+    chip.onclick = () => {
+      container.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      if (callback) callback(chip.dataset.val);
+    };
+  });
+}
+
+// ============ الانتقال لإعداد المباراة ============
+function goSetup(mode) {
+  state.mode = mode;
+  loadPlayerName();
+  initAvatarPicker('avatar-picker');
+  initCategoryGrid('category-grid');
+  
+  document.getElementById('ai-count-group').style.display = (mode === 'single') ? 'block' : 'none';
+  document.getElementById('local-count-group').style.display = (mode === 'local') ? 'block' : 'none';
+  document.getElementById('local-players-names').style.display = (mode === 'local') ? 'block' : 'none';
+  
+  const titles = { single: 'العب ضد الكمبيوتر 🤖', local: 'العب مع الأصدقاء 👥' };
+  document.getElementById('setup-title').textContent = titles[mode] || 'إعداد المباراة';
+  
+  if (mode === 'local') {
+    renderLocalNamesInputs();
+  }
+  
+  initChips('ai-count-chips');
+  initChips('local-count-chips', (val) => renderLocalNamesInputs(parseInt(val)));
+  initChips('difficulty-chips', (val) => state.difficulty = val);
+  
+  showScreen('screen-setup');
+}
+
+function renderLocalNamesInputs(count) {
+  if (count === undefined) {
+    const active = document.querySelector('#local-count-chips .chip.active');
+    count = active ? parseInt(active.dataset.val) : 3;
+  }
+  const container = document.getElementById('local-names-container');
+  container.innerHTML = '';
+  const savedName = localStorage.getItem('buscomplete-playername') || '';
+  for (let i = 0; i < count; i++) {
+    const div = document.createElement('div');
+    div.style.marginBottom = '8px';
+    div.innerHTML = `
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div style="font-size:24px;">${AVATARS[i]}</div>
+        <input type="text" class="form-input local-player-name" placeholder="اسم اللاعب ${i+1}" value="${i===0 ? savedName : ''}" maxlength="14" style="flex:1;">
+      </div>
+    `;
+    container.appendChild(div);
+  }
+}
+
+// ============ بدء المباراة ============
+function startMatch() {
+  // Validate
+  const name = document.getElementById('setup-player-name').value.trim();
+  if (!name) {
+    toast('يرجى إدخال اسمك', 'error');
+    sound.error();
+    return;
+  }
+  savePlayerName(name, selectedAvatar);
+  
+  if (state.categories.length < 3) {
+    toast('اختر 3 فئات على الأقل', 'error');
+    sound.error();
+    return;
+  }
+  
+  state.totalRounds = parseInt(document.getElementById('setup-rounds').value);
+  state.roundDuration = parseInt(document.getElementById('setup-duration').value);
+  
+  state.players = [];
+  state.currentRound = 0;
+  state.usedLetters = [];
+  
+  if (state.mode === 'single') {
+    const aiCount = parseInt(document.querySelector('#ai-count-chips .chip.active').dataset.val);
+    state.players.push({
+      id: 'me', name: name, avatar: selectedAvatar, isHost: true, isAI: false,
+      totalScore: 0, roundScore: 0, roundAnswers: {}
+    });
+    // Add AI players
+    const shuffledAI = [...AI_NAMES].sort(() => Math.random() - 0.5);
+    for (let i = 0; i < aiCount; i++) {
+      state.players.push({
+        id: 'ai' + i, name: shuffledAI[i], avatar: AVATARS[(i+1) % AVATARS.length],
+        isHost: false, isAI: true, totalScore: 0, roundScore: 0, roundAnswers: {}
+      });
+    }
+    startRound();
+  } else if (state.mode === 'local') {
+    const names = [];
+    const inputs = document.querySelectorAll('.local-player-name');
+    inputs.forEach((inp, i) => {
+      const n = inp.value.trim() || `لاعب ${i+1}`;
+      names.push({ name: n, avatar: AVATARS[i] });
+    });
+    names.forEach((p, i) => {
+      state.players.push({
+        id: 'local' + i, name: p.name, avatar: p.avatar, isHost: i === 0, isAI: false,
+        totalScore: 0, roundScore: 0, roundAnswers: {}
+      });
+    });
+    state.currentPlayerIndex = 0;
+    startLocalPlayerTurn();
+  }
+}
+
+// ============ اختيار حرف ============
+function pickLetter() {
+  let pool = state.settings.easyletters ? EASY_LETTERS : ARABIC_LETTERS;
+  pool = pool.filter(l => !state.usedLetters.includes(l));
+  if (pool.length === 0) {
+    state.usedLetters = [];
+    pool = state.settings.easyletters ? EASY_LETTERS : ARABIC_LETTERS;
+  }
+  const letter = pool[Math.floor(Math.random() * pool.length)];
+  state.usedLetters.push(letter);
+  state.currentLetter = letter;
+  return letter;
+}
+
+// ============ بدء جولة (فردي / أونلاين) ============
+function startRound() {
+  state.currentRound++;
+  state.aiAnsweredThisRound = false;
+  state.reviewOverrides = {};
+  
+  // Reset round data
+  state.players.forEach(p => {
+    p.roundAnswers = {};
+    p.roundScore = 0;
+  });
+  
+  const letter = pickLetter();
+  sound.letter();
+  vibrate(50);
+  
+  // Generate AI answers immediately (will be revealed at end)
+  state.players.filter(p => p.isAI).forEach(ai => {
+    ai.roundAnswers = generateAIAnswers(letter, state.categories);
+  });
+  
+  renderGameScreen();
+  startTimer();
+}
+
+// ============ بدء دور لاعب محلي ============
+function startLocalPlayerTurn() {
+  // When all players done their turn for this round, advance round
+  if (state.currentPlayerIndex >= state.players.length) {
+    // All players played this round - calculate scores
+    finishLocalRound();
+    return;
+  }
+  
+  // Pick letter at start of round (first player)
+  if (state.currentPlayerIndex === 0) {
+    state.currentRound++;
+    state.reviewOverrides = {};
+    const letter = pickLetter();
+    sound.letter();
+    // Reset answers
+    state.players.forEach(p => { p.roundAnswers = {}; p.roundScore = 0; });
+  }
+  
+  renderGameScreen();
+  startTimer();
+}
+
+function finishLocalRound() {
+  // Calculate scores
+  calculateScores();
+  state.currentPlayerIndex = 0;
+  
+  // Show results
+  if (state.currentRound >= state.totalRounds) {
+    showFinalResults();
+  } else {
+    showRoundResults();
+  }
+}
+
+// ============ المؤقت ============
+function startTimer() {
+  clearInterval(state.timerInterval);
+  state.timeLeft = state.roundDuration;
+  updateTimerDisplay();
+  
+  state.timerInterval = setInterval(() => {
+    state.timeLeft--;
+    updateTimerDisplay();
+    if (state.timeLeft <= 5 && state.timeLeft > 0) {
+      sound.tick();
+      vibrate(30);
+    }
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timerInterval);
+      onTimeUp();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timer-display');
+  el.textContent = state.timeLeft;
+  el.classList.toggle('warn', state.timeLeft <= 10);
+}
+
+function stopTimer() {
+  clearInterval(state.timerInterval);
+}
+
+// ============ عرض شاشة اللعب ============
+function renderGameScreen() {
+  const currentPlayer = state.mode === 'local' 
+    ? state.players[state.currentPlayerIndex]
+    : state.players.find(p => p.id === 'me' || p.id === state.myPlayerId) || state.players[0];
+  
+  document.getElementById('game-round-num').textContent = state.currentRound;
+  document.getElementById('game-round-total').textContent = state.totalRounds;
+  document.getElementById('game-mode-label').textContent = 
+    state.mode === 'single' ? 'فردي ضد الكمبيوتر' :
+    state.mode === 'local' ? `جهاز واحد — دور ${currentPlayer.name}` :
+    'أونلاين';
+  
+  const letterEl = document.getElementById('letter-display');
+  letterEl.textContent = state.currentLetter;
+  letterEl.classList.remove('pop');
+  void letterEl.offsetWidth;
+  letterEl.classList.add('pop');
+  
+  const badge = document.getElementById('current-player-badge');
+  badge.innerHTML = `<span class="avatar">${currentPlayer.avatar}</span><span>${currentPlayer.name}</span>`;
+  
+  // Build answer table
+  const table = document.getElementById('answers-table');
+  table.innerHTML = '';
+  state.categories.forEach(catId => {
+    const cat = ALL_CATEGORIES.find(c => c.id === catId);
+    const row = document.createElement('div');
+    row.className = 'answer-row';
+    row.innerHTML = `
+      <div class="answer-cat">${cat.icon}<br>${cat.label}</div>
+      <input type="text" class="answer-input" data-cat="${catId}" placeholder="كلمة تبدأ بـ ${state.currentLetter}" autocomplete="off" autocapitalize="off">
+    `;
+    table.appendChild(row);
+    
+    const input = row.querySelector('input');
+    // Restore if exists
+    if (currentPlayer.roundAnswers[catId]) {
+      input.value = currentPlayer.roundAnswers[catId];
+    }
+    input.addEventListener('input', (e) => {
+      currentPlayer.roundAnswers[catId] = e.target.value.trim();
+      // Live validation
+      const val = e.target.value.trim();
+      if (val && !startsWithLetter(val, state.currentLetter)) {
+        e.target.classList.add('invalid-letter');
+      } else {
+        e.target.classList.remove('invalid-letter');
+      }
+    });
+  });
+  
+  // For AI in single player - we show their answers locked at end. For local pass-and-play, hide previous players' answers.
+  if (state.mode === 'local' && state.currentPlayerIndex > 0) {
+    // Don't prefill - new player's turn
+  }
+  
+  // Switch to game screen
+  showScreen('screen-game');
+}
+
+// ============ التحقق من أن الكلمة تبدأ بالحرف ============
+function startsWithLetter(word, letter) {
+  if (!word) return false;
+  word = word.trim();
+  if (!word) return false;
+  // Normalize: remove leading "ال"
+  let w = word.replace(/^ال/, '');
+  // Handle Alef variations
+  const firstChar = w.charAt(0);
+  if (letter === 'ا') {
+    return ['ا','أ','إ','آ'].includes(firstChar);
+  }
+  return firstChar === letter;
+}
+
+// ============ زر "أتوبيس كومبليت" ============
+function onCompleteClick() {
+  const currentPlayer = state.mode === 'local' 
+    ? state.players[state.currentPlayerIndex]
+    : state.players.find(p => p.id === 'me' || p.id === state.myPlayerId) || state.players[0];
+  
+  // Check if all filled
+  const allFilled = state.categories.every(cat => 
+    currentPlayer.roundAnswers[cat] && currentPlayer.roundAnswers[cat].trim()
+  );
+  
+  if (!allFilled) {
+    if (!confirm('لم تكمل جميع الفئات. هل تريد إنهاء الجولة؟')) return;
+  }
+  
+  sound.complete();
+  vibrate(100);
+  
+  endRoundForCurrentPlayer();
+}
+
+function onTimeUp() {
+  sound.error();
+  vibrate(200);
+  toast('انتهى الوقت! ⏰', 'error');
+  endRoundForCurrentPlayer();
+}
+
+function endRoundForCurrentPlayer() {
+  stopTimer();
+  
+  // Lock inputs
+  document.querySelectorAll('.answer-input').forEach(inp => {
+    inp.classList.add('locked');
+    inp.disabled = true;
+  });
+  
+  if (state.mode === 'single') {
+    // Move to review
+    setTimeout(() => goToReview(), 600);
+  } else if (state.mode === 'local') {
+    // Next player
+    state.currentPlayerIndex++;
+    toast(`انتهى دور ${state.players[state.currentPlayerIndex - 1].name}`, 'success');
+    setTimeout(() => {
+      if (state.currentPlayerIndex >= state.players.length) {
+        finishLocalRound();
+      } else {
+        // Show "pass to next player" prompt
+        showPassDevicePrompt();
+      }
+    }, 800);
+  } else if (state.mode === 'online') {
+    // Send my answers to host
+    sendToHost({ type: 'answers-submitted', playerId: state.myPlayerId, answers: getCurrentPlayerAnswers() });
+    // Host will decide when to end round
+    toast('تم إرسال إجاباتك', 'success');
+  }
+}
+
+function showPassDevicePrompt() {
+  const next = state.players[state.currentPlayerIndex];
+  if (confirm(`مرّر الجهاز إلى: ${next.name} ${next.avatar}\nاضغط موافق عندما يكون الجهاز لديه.`)) {
+    startLocalPlayerTurn();
+  }
+}
+
+function getCurrentPlayerAnswers() {
+  const p = state.players.find(p => p.id === state.myPlayerId);
+  return p ? p.roundAnswers : {};
+}
+
+// ============ توليد إجابات الذكاء الاصطناعي ============
+function generateAIAnswers(letter, categories) {
+  const answers = {};
+  const used = new Set();
+  
+  categories.forEach(cat => {
+    const dict = AI_DICTIONARY[letter];
+    if (!dict || !dict[cat] || dict[cat].length === 0) {
+      // AI leaves blank
+      return;
+    }
+    const options = dict[cat].filter(w => !used.has(w));
+    if (options.length === 0) {
+      // Reuse allowed but try main list
+      const all = dict[cat];
+      if (all.length > 0) {
+        answers[cat] = all[Math.floor(Math.random() * all.length)];
+      }
+      return;
+    }
+    const pick = options[Math.floor(Math.random() * options.length)];
+    answers[cat] = pick;
+    used.add(pick);
+  });
+  
+  // Simulate AI being incomplete sometimes (50% chance to skip 1-2 categories)
+  if (Math.random() < 0.4) {
+    const filledCats = Object.keys(answers);
+    if (filledCats.length > 2) {
+      const skipCount = Math.floor(Math.random() * 2) + 1;
+      for (let i = 0; i < skipCount && filledCats.length > 0; i++) {
+        const idx = Math.floor(Math.random() * filledCats.length);
+        delete answers[filledCats[idx]];
+        filledCats.splice(idx, 1);
+      }
+    }
+  }
+  
+  return answers;
+}
+
+// ============ شاشة المراجعة ============
+function goToReview() {
+  // For single player: show player's answers + AI answers for review
+  const reviewList = document.getElementById('review-list');
+  reviewList.innerHTML = '';
+  
+  const me = state.players.find(p => !p.isAI);
+  state.categories.forEach(cat => {
+    const catObj = ALL_CATEGORIES.find(c => c.id === cat);
+    
+    // Player's answer
+    const myAns = me.roundAnswers[cat] || '';
+    if (myAns) {
+      const validByLetter = startsWithLetter(myAns, state.currentLetter);
+      const item = document.createElement('div');
+      item.className = 'review-item';
+      const key = `me_${cat}`;
+      const currentOverride = state.reviewOverrides[key];
+      item.innerHTML = `
+        <div class="review-cat">${catObj.icon} ${catObj.label}<br><small style="font-weight:400;">أنت</small></div>
+        <div>
+          <div class="review-answer">${myAns}</div>
+          ${!validByLetter ? '<small style="color:var(--danger);">لا تبدأ بالحرف — تُعتبر خاطئة</small>' : ''}
+        </div>
+        <div class="review-controls">
+          <button class="review-btn ${currentOverride === true || (currentOverride === undefined && validByLetter) ? 'valid' : ''}" data-key="${key}" data-val="true">✓</button>
+          <button class="review-btn ${currentOverride === false || (!validByLetter && currentOverride === undefined) ? 'invalid' : ''}" data-key="${key}" data-val="false">✗</button>
+        </div>
+      `;
+      reviewList.appendChild(item);
+    }
+  });
+  
+  // Wire review buttons
+  reviewList.querySelectorAll('.review-btn').forEach(btn => {
+    btn.onclick = () => {
+      const key = btn.dataset.key;
+      const val = btn.dataset.val === 'true';
+      state.reviewOverrides[key] = val;
+      // Update siblings
+      const siblings = btn.parentElement.querySelectorAll('.review-btn');
+      siblings.forEach(s => s.classList.remove('valid', 'invalid'));
+      btn.classList.add(val ? 'valid' : 'invalid');
+      sound.beep();
+    };
+  });
+  
+  showScreen('screen-review');
+}
+
+function confirmReview() {
+  calculateScores();
+  if (state.currentRound >= state.totalRounds) {
+    showFinalResults();
+  } else {
+    showRoundResults();
+  }
+}
+
+// ============ حساب النقاط ============
+function calculateScores() {
+  // For each category, check uniqueness across all players
+  state.players.forEach(p => { p.roundScore = 0; });
+  
+  state.categories.forEach(cat => {
+    // Collect all answers for this category
+    const answersByPlayer = {};
+    state.players.forEach(p => {
+      const ans = (p.roundAnswers[cat] || '').trim();
+      if (ans) {
+        // Apply review override
+        const key = `${p.id}_${cat}`;
+        const override = state.reviewOverrides[key];
+        if (override === false) {
+          // Marked invalid by review
+          return;
+        }
+        // Check letter validity
+        if (!startsWithLetter(ans, state.currentLetter)) {
+          return;
+        }
+        // Normalize for comparison
+        const normalized = ans.toLowerCase().trim().replace(/^ال/, '').replace(/[ًٌٍَُِّْ]/g, '');
+        if (!answersByPlayer[normalized]) answersByPlayer[normalized] = [];
+        answersByPlayer[normalized].push(p.id);
+      }
+    });
+    
+    // Award points
+    Object.keys(answersByPlayer).forEach(norm => {
+      const playerIds = answersByPlayer[norm];
+      const isUnique = playerIds.length === 1;
+      const points = isUnique ? state.settings.uniquePts : state.settings.sharedPts;
+      playerIds.forEach(pid => {
+        const player = state.players.find(p => p.id === pid);
+        if (player) player.roundScore += points;
+      });
+    });
+  });
+  
+  // Add to totals
+  state.players.forEach(p => {
+    p.totalScore += p.roundScore;
+  });
+}
+
+// ============ شاشة النتائج ============
+function showRoundResults() {
+  document.getElementById('results-letter').textContent = state.currentLetter;
+  
+  // Build results table
+  const table = document.getElementById('results-table');
+  let html = '<thead><tr><th>الفئة</th>';
+  state.players.forEach(p => {
+    html += `<th>${p.avatar}<br><small>${p.name}</small></th>`;
+  });
+  html += '</tr></thead><tbody>';
+  
+  state.categories.forEach(cat => {
+    const catObj = ALL_CATEGORIES.find(c => c.id === cat);
+    html += `<tr><td class="cat-cell">${catObj.icon} ${catObj.label}</td>`;
+    
+    // For each player, show answer + points
+    state.players.forEach(p => {
+      const ans = (p.roundAnswers[cat] || '').trim();
+      const valid = ans && startsWithLetter(ans, state.currentLetter) && state.reviewOverrides[`${p.id}_${cat}`] !== false;
+      const override = state.reviewOverrides[`${p.id}_${cat}`];
+      const isInvalid = override === false || (ans && !startsWithLetter(ans, state.currentLetter));
+      
+      // Calculate points for this category
+      let pts = 0;
+      if (ans && valid) {
+        const normalized = ans.toLowerCase().trim().replace(/^ال/, '').replace(/[ًٌٍَُِّْ]/g, '');
+        const count = state.players.filter(pp => {
+          const a = (pp.roundAnswers[cat] || '').trim();
+          if (!a) return false;
+          if (state.reviewOverrides[`${pp.id}_${cat}`] === false) return false;
+          if (!startsWithLetter(a, state.currentLetter)) return false;
+          const n = a.toLowerCase().trim().replace(/^ال/, '').replace(/[ًٌٍَُِّْ]/g, '');
+          return n === normalized;
+        }).length;
+        pts = count === 1 ? state.settings.uniquePts : state.settings.sharedPts;
+      }
+      
+      const ptsClass = pts === state.settings.uniquePts ? 'pts-10' : (pts === state.settings.sharedPts ? 'pts-5' : 'pts-0');
+      html += `<td>
+        <div class="answer-cell ${isInvalid ? 'text-muted' : ''}">${ans || '—'}</div>
+        <div class="pts ${ptsClass}">${pts}</div>
+      </td>`;
+    });
+    
+    html += '</tr>';
+  });
+  
+  // Totals row
+  html += '<tr><td class="cat-cell">المجموع</td>';
+  state.players.forEach(p => {
+    html += `<td><div class="pts pts-10" style="font-size:18px;">${p.roundScore}</div></td>`;
+  });
+  html += '</tr></tbody>';
+  
+  table.innerHTML = html;
+  
+  renderScoreboard('scoreboard', false);
+  
+  // Update next round button
+  const nextBtn = document.getElementById('next-round-btn');
+  if (state.currentRound >= state.totalRounds) {
+    nextBtn.textContent = 'النتيجة النهائية 🏆';
+    nextBtn.onclick = () => showFinalResults();
+  } else {
+    nextBtn.textContent = 'الجولة التالية ←';
+    nextBtn.onclick = () => nextRound();
+  }
+  
+  showScreen('screen-results');
+}
+
+function renderScoreboard(elementId, isFinal) {
+  const sorted = [...state.players].sort((a, b) => b.totalScore - a.totalScore);
+  const container = document.getElementById(elementId);
+  container.innerHTML = '';
+  
+  sorted.forEach((p, i) => {
+    const rank = i + 1;
+    let rankClass = '';
+    if (rank === 1) rankClass = 'gold';
+    else if (rank === 2) rankClass = 'silver';
+    else if (rank === 3) rankClass = 'bronze';
+    
+    const row = document.createElement('div');
+    row.className = 'score-row' + (rank === 1 && isFinal ? ' winner' : '');
+    row.innerHTML = `
+      <div class="score-rank ${rankClass}">${rank}</div>
+      <div>
+        <div class="score-name">${p.avatar} ${p.name}${p.isAI ? ' 🤖' : ''}</div>
+        <div class="score-detail">${isFinal ? 'النتيجة النهائية' : `هذه الجولة: ${p.roundScore} نقطة`}</div>
+      </div>
+      <div class="score-total">${p.totalScore}</div>
+      ${!isFinal ? `<div class="score-delta">+${p.roundScore}</div>` : '<div></div>'}
+    `;
+    container.appendChild(row);
+  });
+}
+
+function nextRound() {
+  if (state.mode === 'single') {
+    startRound();
+  } else if (state.mode === 'local') {
+    state.currentPlayerIndex = 0;
+    startLocalPlayerTurn();
+  } else if (state.mode === 'online') {
+    if (state.isHost) {
+      startRound();
+      broadcastState({ type: 'round-start', state: serializeState() });
+    } else {
+      toast('بانتظار المضيف لبدء الجولة التالية...', 'info');
+    }
+  }
+}
+
+// ============ النتائج النهائية ============
+function showFinalResults() {
+  const sorted = [...state.players].sort((a, b) => b.totalScore - a.totalScore);
+  const winner = sorted[0];
+  
+  document.getElementById('winner-name').textContent = `${winner.avatar} ${winner.name}`;
+  document.getElementById('winner-score').textContent = `${winner.totalScore} نقطة`;
+  
+  renderScoreboard('final-scoreboard', true);
+  
+  const stats = `${state.totalRounds} جولات • ${state.players.length} لاعبون • الحروف المستخدمة: ${state.usedLetters.join('، ')}`;
+  document.getElementById('final-stats').textContent = stats;
+  
+  sound.win();
+  launchConfetti();
+  vibrate([100, 50, 100, 50, 200]);
+  
+  showScreen('screen-final');
+}
+
+function launchConfetti() {
+  const colors = ['#6B46C1', '#EC4899', '#FBBF24', '#10B981', '#3B82F6'];
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.animationDuration = (Math.random() * 2 + 2) + 's';
+      c.style.width = (Math.random() * 8 + 6) + 'px';
+      c.style.height = (Math.random() * 10 + 8) + 'px';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 4000);
+    }, i * 50);
+  }
+}
+
+function playAgain() {
+  state.players.forEach(p => { p.totalScore = 0; p.roundScore = 0; p.roundAnswers = {}; });
+  state.currentRound = 0;
+  state.usedLetters = [];
+  state.reviewOverrides = {};
+  
+  if (state.mode === 'single') {
+    startRound();
+  } else if (state.mode === 'local') {
+    state.currentPlayerIndex = 0;
+    startLocalPlayerTurn();
+  } else if (state.mode === 'online') {
+    if (state.isHost) {
+      startRound();
+      broadcastState({ type: 'round-start', state: serializeState() });
+    } else {
+      showScreen('screen-lobby');
+    }
+  }
+}
+
+function goHome() {
+  // Cleanup
+  stopTimer();
+  if (state.peer) {
+    try { state.peer.destroy(); } catch(e) {}
+    state.peer = null;
+  }
+  state.connections = [];
+  state.roomCode = null;
+  state.isHost = false;
+  state.myPlayerId = null;
+  state.players = [];
+  state.currentRound = 0;
+  state.usedLetters = [];
+  showScreen('screen-home');
+}
+
+// ============ اللعب أونلاين (PeerJS) ============
+function goOnlineMenu() {
+  state.mode = 'online';
+  loadPlayerName();
+  initAvatarPicker('online-avatar-picker');
+  showScreen('screen-online-menu');
+}
+
+function generateRoomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+function showConnecting(title, msg) {
+  document.getElementById('connecting-title').textContent = title;
+  document.getElementById('connecting-msg').textContent = msg;
+  document.getElementById('connecting-overlay').classList.add('active');
+}
+
+function hideConnecting() {
+  document.getElementById('connecting-overlay').classList.remove('active');
+}
+
+function cancelConnecting() {
+  hideConnecting();
+  if (state.peer) {
+    try { state.peer.destroy(); } catch(e) {}
+    state.peer = null;
+  }
+}
+
+function createRoom() {
+  const name = document.getElementById('online-player-name').value.trim();
+  if (!name) {
+    toast('أدخل اسمك أولاً', 'error');
+    return;
+  }
+  savePlayerName(name, selectedAvatar);
+  
+  const code = generateRoomCode();
+  state.roomCode = code;
+  state.isHost = true;
+  state.myPlayerId = 'host';
+  
+  showConnecting('جاري إنشاء الغرفة...', 'قد يستغرق ذلك بضع ثوانٍ');
+  
+  const peerId = 'buscomplete-' + code;
+  state.peer = new Peer(peerId, { debug: 1 });
+  
+  state.peer.on('open', () => {
+    hideConnecting();
+    state.players = [{
+      id: 'host', name: name, avatar: selectedAvatar, isHost: true, isAI: false,
+      totalScore: 0, roundScore: 0, roundAnswers: {}, connected: true
+    }];
+    state.connections = [];
+    
+    document.getElementById('lobby-code-display').textContent = code;
+    initLobbyUI();
+    showScreen('screen-lobby');
+    toast('تم إنشاء الغرفة ✓', 'success');
+  });
+  
+  state.peer.on('connection', (conn) => {
+    conn.on('open', () => {
+      state.connections.push(conn);
+    });
+    conn.on('data', (data) => handlePeerData(data, conn));
+    conn.on('close', () => {
+      // Player disconnected
+      state.connections = state.connections.filter(c => c !== conn);
+      const idx = state.players.findIndex(p => p.connId === conn.peer);
+      if (idx >= 0) {
+        state.players[idx].connected = false;
+        renderLobbyPlayers();
+        toast(`${state.players[idx].name} غادر الغرفة`, 'info');
+      }
+      broadcastState({ type: 'state-sync', state: serializeState() });
+    });
+  });
+  
+  state.peer.on('error', (err) => {
+    hideConnecting();
+    console.error('Peer error:', err);
+    let msg = 'تعذر إنشاء الغرفة';
+    if (err.type === 'unavailable-id') msg = 'الكود مستخدم، حاول مرة أخرى';
+    toast(msg, 'error');
+    try { state.peer.destroy(); } catch(e) {}
+    state.peer = null;
+  });
+}
+
+function joinRoom() {
+  const name = document.getElementById('online-player-name').value.trim();
+  let code = document.getElementById('join-code').value.trim().toUpperCase();
+  if (!name) { toast('أدخل اسمك أولاً', 'error'); return; }
+  if (code.length !== 6) { toast('أدخل كود الغرفة المكون من 6 أحرف', 'error'); return; }
+  
+  savePlayerName(name, selectedAvatar);
+  state.roomCode = code;
+  state.isHost = false;
+  state.myPlayerId = 'guest_' + Math.random().toString(36).substr(2, 9);
+  
+  showConnecting('جاري الانضمام للغرفة...', `الكود: ${code}`);
+  
+  const peerId = 'buscomplete-' + code;
+  state.peer = new Peer({ debug: 1 });
+  
+  state.peer.on('open', () => {
+    const conn = state.peer.connect(peerId, { reliable: true });
+    conn.on('open', () => {
+      state.connections = [conn];
+      // Send join request
+      conn.send({
+        type: 'join-request',
+        player: {
+          id: state.myPlayerId, name: name, avatar: selectedAvatar,
+          isHost: false, isAI: false, totalScore: 0, roundScore: 0,
+          roundAnswers: {}, connected: true, connId: conn.peer
+        }
+      });
+    });
+    conn.on('data', (data) => handlePeerData(data, conn));
+    conn.on('close', () => {
+      toast('انقطع الاتصال بالمضيف', 'error');
+      setTimeout(() => goHome(), 1500);
+    });
+  });
+  
+  state.peer.on('error', (err) => {
+    hideConnecting();
+    console.error('Peer error:', err);
+    let msg = 'تعذر الانضمام للغرفة';
+    if (err.type === 'peer-unavailable') msg = 'الغرفة غير موجودة. تأكد من الكود.';
+    toast(msg, 'error');
+    try { state.peer.destroy(); } catch(e) {}
+    state.peer = null;
+  });
+}
+
+function handlePeerData(data, conn) {
+  if (!data || !data.type) return;
+  
+  switch (data.type) {
+    case 'join-request':
+      // Host receives join request
+      if (state.isHost) {
+        const player = data.player;
+        player.connId = conn.peer;
+        if (state.players.length >= 50) {
+          conn.send({ type: 'error', msg: 'الغرفة ممتلئة (50 لاعب)' });
+          return;
+        }
+        if (state.players.find(p => p.name === player.name)) {
+          // Allow duplicate names but add suffix
+          player.name = player.name + ' ' + (state.players.length);
+        }
+        state.players.push(player);
+        renderLobbyPlayers();
+        // Broadcast updated state
+        broadcastState({ type: 'state-sync', state: serializeState() });
+        toast(`${player.name} انضم للغرفة`, 'success');
+      }
+      break;
+    
+    case 'state-sync':
+      // Guest receives state from host
+      if (!state.isHost) {
+        applySerializedState(data.state);
+        if (state.phase === 'lobby' || data.state.phase === 'lobby') {
+          document.getElementById('lobby-code-display').textContent = state.roomCode;
+          renderLobbyPlayers();
+          updateGuestLobbyView();
+        } else if (data.state.phase === 'game') {
+          renderGameScreenOnline();
+        } else if (data.state.phase === 'results') {
+          showRoundResults();
+        } else if (data.state.phase === 'final') {
+          showFinalResults();
+        }
+      }
+      break;
+    
+    case 'round-start':
+      if (!state.isHost) {
+        applySerializedState(data.state);
+        renderGameScreenOnline();
+        startTimer();
+      }
+      break;
+    
+    case 'answers-submitted':
+      // Host receives player's answers
+      if (state.isHost) {
+        const player = state.players.find(p => p.id === data.playerId);
+        if (player) {
+          player.roundAnswers = data.answers;
+          player.submitted = true;
+          // Check if all submitted or time up
+          checkAllSubmitted();
+        }
+      }
+      break;
+    
+    case 'timer-end':
+      if (!state.isHost) {
+        stopTimer();
+        // Lock inputs
+        document.querySelectorAll('.answer-input').forEach(inp => {
+          inp.classList.add('locked');
+          inp.disabled = true;
+        });
+        // Send my answers to host
+        const me = state.players.find(p => p.id === state.myPlayerId);
+        if (me) {
+          sendToHost({ type: 'answers-submitted', playerId: state.myPlayerId, answers: me.roundAnswers });
+        }
+      }
+      break;
+    
+    case 'review-update':
+      if (!state.isHost) {
+        state.reviewOverrides = data.overrides || {};
+      }
+      break;
+    
+    case 'error':
+      toast(data.msg || 'خطأ', 'error');
+      hideConnecting();
+      break;
+    
+    case 'host-start':
+      if (!state.isHost) {
+        applySerializedState(data.state);
+        startRoundGuest();
+      }
+      break;
+  }
+}
+
+function applySerializedState(s) {
+  if (!s) return;
+  state.players = s.players || state.players;
+  state.categories = s.categories || state.categories;
+  state.currentLetter = s.currentLetter;
+  state.currentRound = s.currentRound || 0;
+  state.totalRounds = s.totalRounds || 5;
+  state.roundDuration = s.roundDuration || 60;
+  state.timeLeft = s.timeLeft || state.roundDuration;
+  state.usedLetters = s.usedLetters || [];
+  state.reviewOverrides = s.reviewOverrides || {};
+  state.difficulty = s.difficulty || 'easy';
+}
+
+function serializeState() {
+  return {
+    players: state.players.map(p => ({
+      id: p.id, name: p.name, avatar: p.avatar, isHost: p.isHost, isAI: p.isAI,
+      totalScore: p.totalScore, roundScore: p.roundScore, roundAnswers: p.roundAnswers,
+      connected: p.connected
+    })),
+    categories: state.categories,
+    currentLetter: state.currentLetter,
+    currentRound: state.currentRound,
+    totalRounds: state.totalRounds,
+    roundDuration: state.roundDuration,
+    timeLeft: state.timeLeft,
+    usedLetters: state.usedLetters,
+    reviewOverrides: state.reviewOverrides,
+    difficulty: state.difficulty,
+    phase: state.phase
+  };
+}
+
+function broadcastState(msg) {
+  state.connections.forEach(conn => {
+    try {
+      if (conn.open) conn.send(msg);
+    } catch(e) { console.error('Broadcast error:', e); }
+  });
+}
+
+function sendToHost(msg) {
+  if (state.isHost) return;
+  if (state.connections[0] && state.connections[0].open) {
+    state.connections[0].send(msg);
+  }
+}
+
+function checkAllSubmitted() {
+  // Called by host
+  const humanPlayers = state.players.filter(p => !p.isAI);
+  const allSubmitted = humanPlayers.every(p => p.submitted);
+  
+  // If grace period enabled, give extra time after first submission
+  if (allSubmitted || state.timeLeft <= 0) {
+    // End round
+    finishOnlineRound();
+  } else if (state.settings.grace && !state.graceStarted) {
+    state.graceStarted = true;
+    state.timeLeft = Math.min(state.settings.graceSec, state.timeLeft + state.settings.graceSec);
+    broadcastState({ type: 'state-sync', state: serializeState() });
+    toast('مهلة إضافية - أسرعوا!', 'info');
+  }
+}
+
+function finishOnlineRound() {
+  if (!state.isHost) return;
+  stopTimer();
+  // Calculate scores
+  calculateScores();
+  state.players.forEach(p => p.submitted = false);
+  state.graceStarted = false;
+  // Broadcast results
+  broadcastState({ type: 'state-sync', state: serializeState() });
+  showRoundResults();
+}
+
+function initLobbyUI() {
+  document.getElementById('host-settings-card').style.display = state.isHost ? 'block' : 'none';
+  document.getElementById('guest-waiting-card').style.display = state.isHost ? 'none' : 'block';
+  
+  if (state.isHost) {
+    initCategoryGrid('lobby-category-grid');
+    initChips('lobby-difficulty-chips', (val) => state.difficulty = val);
+    
+    document.getElementById('lobby-rounds').onchange = (e) => {
+      state.totalRounds = parseInt(e.target.value);
+      broadcastState({ type: 'state-sync', state: serializeState() });
+    };
+    document.getElementById('lobby-duration').onchange = (e) => {
+      state.roundDuration = parseInt(e.target.value);
+      broadcastState({ type: 'state-sync', state: serializeState() });
+    };
+  }
+  
+  renderLobbyPlayers();
+}
+
+function renderLobbyPlayers() {
+  const list = document.getElementById('lobby-player-list');
+  if (!list) return;
+  list.innerHTML = '';
+  state.players.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'player-item';
+    el.innerHTML = `
+      <div class="player-avatar">${p.avatar}</div>
+      <div class="player-name">${p.name}${p.isAI ? ' 🤖' : ''}</div>
+      ${p.isHost ? '<span class="host-tag">مضيف 👑</span>' : ''}
+      ${!p.connected && !p.isHost ? '<span style="color:var(--danger);font-size:11px;">غير متصل</span>' : ''}
+    `;
+    list.appendChild(el);
+  });
+  document.getElementById('lobby-player-count').textContent = state.players.length;
+  
+  if (!state.isHost) {
+    const summary = document.getElementById('lobby-settings-summary');
+    if (summary) {
+      summary.textContent = `الجولات: ${state.totalRounds} • المدة: ${state.roundDuration} ثانية • الفئات: ${state.categories.length} • الصعوبة: ${state.difficulty}`;
+    }
+  }
+}
+
+function updateGuestLobbyView() {
+  // Just re-render with updated state
+}
+
+function copyRoomCode() {
+  if (!state.roomCode) return;
+  navigator.clipboard?.writeText(state.roomCode).then(() => {
+    toast('تم نسخ الكود ✓', 'success');
+  }).catch(() => {
+    toast('الكود: ' + state.roomCode, 'info');
+  });
+}
+
+function hostStartMatch() {
+  if (state.players.length < 2) {
+    toast('تحتاج لاعبًا واحدًا على الأقل للانضمام', 'error');
+    return;
+  }
+  if (state.categories.length < 3) {
+    toast('اختر 3 فئات على الأقل', 'error');
+    return;
+  }
+  state.totalRounds = parseInt(document.getElementById('lobby-rounds').value);
+  state.roundDuration = parseInt(document.getElementById('lobby-duration').value);
+  
+  state.currentRound = 0;
+  state.usedLetters = [];
+  state.players.forEach(p => { p.totalScore = 0; p.roundScore = 0; p.roundAnswers = {}; });
+  
+  startRound();
+  broadcastState({ type: 'host-start', state: serializeState() });
+  broadcastState({ type: 'round-start', state: serializeState() });
+}
+
+function startRoundGuest() {
+  // Guest receives round start
+  state.players.forEach(p => { p.roundAnswers = {}; p.roundScore = 0; });
+  state.reviewOverrides = {};
+  renderGameScreenOnline();
+  startTimer();
+}
+
+function renderGameScreenOnline() {
+  const me = state.players.find(p => p.id === state.myPlayerId);
+  if (!me) return;
+  
+  document.getElementById('game-round-num').textContent = state.currentRound;
+  document.getElementById('game-round-total').textContent = state.totalRounds;
+  document.getElementById('game-mode-label').textContent = 'أونلاين';
+  
+  const letterEl = document.getElementById('letter-display');
+  letterEl.textContent = state.currentLetter;
+  letterEl.classList.remove('pop');
+  void letterEl.offsetWidth;
+  letterEl.classList.add('pop');
+  
+  const badge = document.getElementById('current-player-badge');
+  badge.innerHTML = `<span class="avatar">${me.avatar}</span><span>${me.name}</span>`;
+  
+  const table = document.getElementById('answers-table');
+  table.innerHTML = '';
+  state.categories.forEach(catId => {
+    const cat = ALL_CATEGORIES.find(c => c.id === catId);
+    const row = document.createElement('div');
+    row.className = 'answer-row';
+    row.innerHTML = `
+      <div class="answer-cat">${cat.icon}<br>${cat.label}</div>
+      <input type="text" class="answer-input" data-cat="${catId}" placeholder="كلمة تبدأ بـ ${state.currentLetter}" autocomplete="off">
+    `;
+    table.appendChild(row);
+    const input = row.querySelector('input');
+    if (me.roundAnswers[catId]) input.value = me.roundAnswers[catId];
+    input.addEventListener('input', (e) => {
+      me.roundAnswers[catId] = e.target.value.trim();
+      const val = e.target.value.trim();
+      if (val && !startsWithLetter(val, state.currentLetter)) {
+        e.target.classList.add('invalid-letter');
+      } else {
+        e.target.classList.remove('invalid-letter');
+      }
+    });
+  });
+  
+  showScreen('screen-game');
+}
+
+function leaveRoom() {
+  if (state.peer) {
+    try { state.peer.destroy(); } catch(e) {}
+    state.peer = null;
+  }
+  goHome();
+}
+
+// Override onCompleteClick for online mode
+const originalOnCompleteClick = onCompleteClick;
+onCompleteClick = function() {
+  if (state.mode === 'online') {
+    const me = state.players.find(p => p.id === state.myPlayerId);
+    const allFilled = state.categories.every(cat => me.roundAnswers[cat] && me.roundAnswers[cat].trim());
+    if (!allFilled && !confirm('لم تكمل جميع الفئات. هل تريد إنهاء الجولة؟')) return;
+    sound.complete();
+    vibrate(100);
+    stopTimer();
+    document.querySelectorAll('.answer-input').forEach(inp => { inp.classList.add('locked'); inp.disabled = true; });
+    sendToHost({ type: 'answers-submitted', playerId: state.myPlayerId, answers: me.roundAnswers });
+    toast('تم إرسال إجاباتك ✓', 'success');
+  } else {
+    originalOnCompleteClick();
+  }
+};
+
+// Override onTimeUp for online mode
+const originalOnTimeUp = onTimeUp;
+onTimeUp = function() {
+  if (state.mode === 'online') {
+    if (state.isHost) {
+      stopTimer();
+      broadcastState({ type: 'timer-end' });
+      // Collect all answers - those who didn't submit get their current state
+      state.players.forEach(p => { p.submitted = true; });
+      finishOnlineRound();
+    } else {
+      // Guest: just lock and send
+      stopTimer();
+      sound.error();
+      vibrate(200);
+      document.querySelectorAll('.answer-input').forEach(inp => { inp.classList.add('locked'); inp.disabled = true; });
+      const me = state.players.find(p => p.id === state.myPlayerId);
+      sendToHost({ type: 'answers-submitted', playerId: state.myPlayerId, answers: me.roundAnswers });
+    }
+  } else {
+    originalOnTimeUp();
+  }
+};
+
+// ============ التحدي اليومي ============
+function getDailyChallenge() {
+  const today = new Date();
+  const dateStr = today.toISOString().slice(0, 10);
+  // Deterministic seed from date
+  const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  const letters = state.settings.easyletters ? EASY_LETTERS : ARABIC_LETTERS;
+  const letter = letters[seed % letters.length];
+  // Categories - mix it up
+  const shuffled = [...ALL_CATEGORIES].sort((a, b) => {
+    const ha = (a.id.charCodeAt(0) * seed) % 100;
+    const hb = (b.id.charCodeAt(0) * seed) % 100;
+    return ha - hb;
+  });
+  const categories = shuffled.slice(0, 8).map(c => c.id);
+  return { letter, categories, dateStr };
+}
+
+function showDailyChallenge() {
+  const challenge = getDailyChallenge();
+  document.getElementById('daily-letter').textContent = challenge.letter;
+  document.getElementById('daily-date').textContent = challenge.dateStr;
+  renderDailyLeaderboard();
+  loadPlayerName();
+  showScreen('screen-daily');
+}
+
+function renderDailyLeaderboard() {
+  const container = document.getElementById('daily-leaderboard');
+  if (!container) return;
+  const scores = JSON.parse(localStorage.getItem('buscomplete-daily-scores') || '[]');
+  scores.sort((a, b) => b.score - a.score);
+  if (scores.length === 0) {
+    container.innerHTML = '<p class="text-muted text-center" style="padding:10px;">لا توجد نتائج بعد. كن أول من يلعب!</p>';
+    return;
+  }
+  container.innerHTML = '';
+  scores.slice(0, 10).forEach((s, i) => {
+    const el = document.createElement('div');
+    el.className = 'score-row';
+    el.innerHTML = `
+      <div class="score-rank ${i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : ''}">${i+1}</div>
+      <div><div class="score-name">${s.name}</div><div class="score-detail">${s.date}</div></div>
+      <div class="score-total">${s.score}</div>
+      <div></div>
+    `;
+    container.appendChild(el);
+  });
+}
+
+function startDailyChallenge() {
+  const name = document.getElementById('daily-player-name').value.trim();
+  if (!name) { toast('أدخل اسمك', 'error'); return; }
+  savePlayerName(name, selectedAvatar);
+  
+  const challenge = getDailyChallenge();
+  state.mode = 'single';
+  state.difficulty = 'medium';
+  state.categories = challenge.categories;
+  state.totalRounds = 1;
+  state.roundDuration = 90;
+  state.isDaily = true;
+  state.dailyDate = challenge.dateStr;
+  
+  state.players = [
+    { id: 'me', name: name, avatar: selectedAvatar, isHost: true, isAI: false, totalScore: 0, roundScore: 0, roundAnswers: {} }
+  ];
+  // Add 2 AI for the daily challenge
+  const aiNames = [...AI_NAMES].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < 2; i++) {
+    state.players.push({
+      id: 'ai' + i, name: aiNames[i], avatar: AVATARS[(i+1) % AVATARS.length],
+      isHost: false, isAI: true, totalScore: 0, roundScore: 0, roundAnswers: {}
+    });
+  }
+  
+  state.currentRound = 0;
+  state.usedLetters = [];
+  state.currentLetter = challenge.letter;
+  state.usedLetters.push(challenge.letter);
+  
+  // Generate AI answers
+  state.players.filter(p => p.isAI).forEach(ai => {
+    ai.roundAnswers = generateAIAnswers(challenge.letter, challenge.categories);
+  });
+  
+  state.currentRound = 1;
+  renderGameScreen();
+  startTimer();
+}
+
+// Override showFinalResults to save daily score
+const originalShowFinalResults = showFinalResults;
+showFinalResults = function() {
+  if (state.isDaily) {
+    const me = state.players.find(p => !p.isAI);
+    if (me) {
+      const scores = JSON.parse(localStorage.getItem('buscomplete-daily-scores') || '[]');
+      scores.push({
+        name: me.name, score: me.totalScore, date: state.dailyDate
+      });
+      // Keep only top 50
+      scores.sort((a, b) => b.score - a.score);
+      localStorage.setItem('buscomplete-daily-scores', JSON.stringify(scores.slice(0, 50)));
+    }
+  }
+  originalShowFinalResults();
+};
+
+// ============ التهيئة ============
+function init() {
+  loadSettings();
+  loadPlayerName();
+  
+  // Wire daily button
+  const dailyBtn = document.querySelector('[onclick="showScreen(\'screen-daily\')"]');
+  if (dailyBtn) dailyBtn.onclick = showDailyChallenge;
+  
+  showScreen('screen-home');
+}
+
+// Handle page unload - cleanup
+window.addEventListener('beforeunload', () => {
+  if (state.peer) {
+    try { state.peer.destroy(); } catch(e) {}
+  }
+  stopTimer();
+});
+
+// Handle visibility change for online
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && state.timerInterval) {
+    // Pause? No, keep going. But warn.
+  }
+});
+
+// Start when DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
