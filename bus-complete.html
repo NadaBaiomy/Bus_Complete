@@ -984,10 +984,10 @@ body {
 
   <div class="card">
     <div class="card-title">🔑 الانضمام لغرفة</div>
-    <p class="text-muted" style="font-size:13px;margin-bottom:12px;">أدخل الكود المكوّن من 5 أحرف عربية الذي حصلت عليه من المضيف.</p>
+    <p class="text-muted" style="font-size:13px;margin-bottom:12px;">أدخل الكود المكوّن من 6 أحرف (إنجليزية وأرقام) الذي حصلت عليه من المضيف.</p>
     <div class="form-group">
       <label class="form-label">كود الغرفة</label>
-      <input type="text" id="join-code" class="form-input" placeholder="أدخل الكود المكوّن من 5 أحرف عربية" maxlength="5" style="letter-spacing:6px;text-align:center;font-size:24px;font-weight:700;" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <input type="text" id="join-code" class="form-input" placeholder="مثال: AB3K7M" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-size:22px;font-weight:700;" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
     </div>
     <button class="btn btn-secondary" onclick="joinRoom()">انضمام للغرفة</button>
   </div>
@@ -1007,7 +1007,7 @@ body {
 
   <div class="lobby-code">
     <div class="lobby-code-label">كود الغرفة — شاركه مع أصدقائك</div>
-    <div class="lobby-code-value" id="lobby-code-display">— — — — —</div>
+    <div class="lobby-code-value" id="lobby-code-display">------</div>
     <div class="lobby-code-hint">عدد اللاعبين: <span id="lobby-player-count">1</span></div>
     <button class="btn btn-accent btn-sm" style="width:auto;margin-top:10px;" onclick="copyRoomCode()">📋 نسخ الكود</button>
   </div>
@@ -2852,38 +2852,29 @@ function goOnlineMenu() {
   showScreen('screen-online-menu');
 }
 
-// Arabic letters used for room codes (visually distinct, easy to share)
-const ROOM_CODE_LETTERS = ['ا','ب','ج','د','ر','س','ط','ع','ف','ق','ك','ل','م','ن','ه','و','ي','ز','ح','ش'];
-const ROOM_CODE_LENGTH = 5;
+// Room code: 6 uppercase letters + digits (no confusing chars like O/0/I/1)
+const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const ROOM_CODE_LENGTH = 6;
 
 function generateRoomCode() {
   let code = '';
   for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
-    code += ROOM_CODE_LETTERS[Math.floor(Math.random() * ROOM_CODE_LETTERS.length)];
+    code += ROOM_CODE_CHARS[Math.floor(Math.random() * ROOM_CODE_CHARS.length)];
   }
   return code;
 }
 
-// Convert Arabic room code to a safe ASCII peer ID (PeerJS servers may not handle non-ASCII well)
+// Build the peer ID from the room code
 function roomCodeToPeerId(code) {
-  let num = '';
-  for (const ch of code) {
-    const idx = ROOM_CODE_LETTERS.indexOf(ch);
-    if (idx >= 0) {
-      num += String(idx).padStart(2, '0');
-    } else {
-      // Invalid character — return null to signal error
-      return null;
-    }
-  }
-  return 'buscomplete-' + num;
+  if (!code) return null;
+  return 'buscomplete-' + code;
 }
 
-// Validate that a string contains only valid Arabic room-code letters
-function isValidArabicCode(code) {
+// Validate the room code format (6 chars from the allowed set)
+function isValidRoomCode(code) {
   if (!code || code.length !== ROOM_CODE_LENGTH) return false;
   for (const ch of code) {
-    if (ROOM_CODE_LETTERS.indexOf(ch) < 0) return false;
+    if (ROOM_CODE_CHARS.indexOf(ch) < 0) return false;
   }
   return true;
 }
@@ -2896,6 +2887,15 @@ function showConnecting(title, msg) {
 
 function hideConnecting() {
   document.getElementById('connecting-overlay').classList.remove('active');
+  // Clean up reconnect action buttons if present
+  const actions = document.getElementById('reconnect-actions');
+  if (actions) actions.remove();
+  // Restore the default cancel button visibility
+  const modal = document.querySelector('#connecting-overlay .modal');
+  if (modal) {
+    const defaultCancel = modal.querySelector('button[onclick="cancelConnecting()"]');
+    if (defaultCancel) defaultCancel.style.display = '';
+  }
 }
 
 function cancelConnecting() {
@@ -2940,20 +2940,28 @@ function createRoom() {
   });
   
   state.peer.on('connection', (conn) => {
+    // Add the connection to our list immediately (don't wait for 'open')
+    // PeerJS queues sends until the connection is open, so this is safe.
+    if (!state.connections.includes(conn)) state.connections.push(conn);
     conn.on('open', () => {
-      state.connections.push(conn);
+      // Connection is now ready — already in the list
     });
     conn.on('data', (data) => handlePeerData(data, conn));
     conn.on('close', () => {
-      // Player disconnected
+      // Player disconnected — remove from connections but keep in players list (marked as disconnected)
       state.connections = state.connections.filter(c => c !== conn);
       const idx = state.players.findIndex(p => p.connId === conn.peer);
       if (idx >= 0) {
         state.players[idx].connected = false;
         renderLobbyPlayers();
-        toast(`${state.players[idx].name} غادر الغرفة`, 'info');
+        toast(`${state.players[idx].name} انقطع عن الغرفة`, 'info');
       }
       broadcastState({ type: 'state-sync', state: serializeState() });
+    });
+    conn.on('error', (err) => {
+      console.error('Host conn error:', err);
+      // Remove broken connection
+      state.connections = state.connections.filter(c => c !== conn);
     });
   });
   
@@ -2970,11 +2978,11 @@ function createRoom() {
 
 function joinRoom() {
   const name = document.getElementById('online-player-name').value.trim();
-  // Get code as-is (Arabic letters) — just trim whitespace
-  const code = document.getElementById('join-code').value.trim();
+  // Get code, trim, and convert to uppercase for consistency
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
   if (!name) { toast('أدخل اسمك أولاً', 'error'); return; }
-  if (!isValidArabicCode(code)) {
-    toast('أدخل كود الغرفة المكون من 5 أحرف عربية', 'error');
+  if (!isValidRoomCode(code)) {
+    toast('أدخل كود الغرفة المكون من 6 أحرف إنجليزية/أرقام', 'error');
     return;
   }
 
@@ -2994,7 +3002,7 @@ function joinRoom() {
 
   showConnecting('جاري الانضمام للغرفة...', `الكود: ${code}`);
 
-  // Convert Arabic code to safe ASCII peer ID
+  // Build peer ID from the code
   const peerId = roomCodeToPeerId(code);
   state.peer = new Peer({ debug: 1 });
 
@@ -3033,13 +3041,14 @@ function joinRoom() {
     });
     conn.on('data', (data) => handlePeerData(data, conn));
     conn.on('close', () => {
-      toast('انقطع الاتصال بالمضيف', 'error');
-      setTimeout(() => goHome(), 1500);
+      // Don't kick the player out immediately — offer reconnection
+      handleGuestDisconnect('انقطع الاتصال بالمضيف');
     });
     conn.on('error', (err) => {
       console.error('Conn error:', err);
       hideConnecting();
-      toast('خطأ في الاتصال بالغرفة', 'error');
+      // Don't kick out on transient errors
+      handleGuestDisconnect('خطأ في الاتصال');
     });
   });
 
@@ -3060,7 +3069,7 @@ function handlePeerData(data, conn) {
   
   switch (data.type) {
     case 'join-request':
-      // Host receives join request
+      // Host receives join request (new player)
       if (state.isHost) {
         const player = data.player;
         player.connId = conn.peer;
@@ -3073,21 +3082,58 @@ function handlePeerData(data, conn) {
           player.name = player.name + ' ' + (state.players.length);
         }
         state.players.push(player);
+        // Make sure this conn is in the connections list (in case it wasn't added via 'open')
+        if (!state.connections.includes(conn)) state.connections.push(conn);
         renderLobbyPlayers();
         // Broadcast updated state
         broadcastState({ type: 'state-sync', state: serializeState() });
         toast(`${player.name} انضم للغرفة`, 'success');
       }
       break;
+
+    case 'rejoin-request':
+      // Host receives rejoin request (returning player with same ID)
+      if (state.isHost) {
+        const player = data.player;
+        player.connId = conn.peer;
+        // Look for an existing player with the same ID
+        const existing = state.players.find(p => p.id === player.id);
+        if (existing) {
+          // Update the existing player's connection and mark as connected
+          existing.connected = true;
+          existing.connId = conn.peer;
+          // Keep their score/answers from the host's state (more authoritative)
+          toast(`${existing.name} عاد للغرفة 🔄`, 'success');
+        } else {
+          // ID not found — treat as a new player
+          if (state.players.length >= 50) {
+            conn.send({ type: 'error', msg: 'الغرفة ممتلئة (50 لاعب)' });
+            return;
+          }
+          if (state.players.find(p => p.name === player.name)) {
+            player.name = player.name + ' ' + (state.players.length);
+          }
+          state.players.push(player);
+          toast(`${player.name} انضم للغرفة`, 'success');
+        }
+        // Make sure this conn is in the connections list
+        if (!state.connections.includes(conn)) state.connections.push(conn);
+        renderLobbyPlayers();
+        broadcastState({ type: 'state-sync', state: serializeState() });
+      }
+      break;
     
     case 'state-sync':
       // Guest receives state from host
       if (!state.isHost) {
+        const prevPhase = state.phase;
+        const prevLetter = state.currentLetter;
+        const prevRound = state.currentRound;
         applySerializedState(data.state);
         const targetPhase = data.state.phase || state.phase;
         if (targetPhase === 'lobby') {
           // Make sure we're showing the lobby screen
-          if (state.phase !== 'lobby') {
+          if (prevPhase !== 'lobby') {
             hideConnecting();
             initLobbyUI();
             showScreen('screen-lobby');
@@ -3097,7 +3143,16 @@ function handlePeerData(data, conn) {
           updateGuestLobbyView();
         } else if (targetPhase === 'game') {
           hideConnecting();
-          renderGameScreenOnline();
+          // Only re-render the game screen if we weren't already in game,
+          // OR if the letter/round changed (new round started).
+          // This prevents losing focus on input fields during typing when
+          // a state-sync arrives because another player joined/left.
+          if (prevPhase !== 'game' || prevLetter !== state.currentLetter || prevRound !== state.currentRound) {
+            renderGameScreenOnline();
+          } else {
+            // Just update the player badge / round info without rebuilding inputs
+            updateGameScreenOnlineLight();
+          }
         } else if (targetPhase === 'review') {
           hideConnecting();
           if (state.isHost === false) {
@@ -3288,11 +3343,25 @@ function serializeState() {
 }
 
 function broadcastState(msg) {
+  // Send to all open connections; clean up any closed ones
+  const validConns = [];
   state.connections.forEach(conn => {
     try {
-      if (conn.open) conn.send(msg);
-    } catch(e) { console.error('Broadcast error:', e); }
+      if (conn && conn.open) {
+        conn.send(msg);
+        validConns.push(conn);
+      } else if (conn && conn.destroyed) {
+        // skip destroyed connections
+      } else if (conn) {
+        // Not open yet but not destroyed — keep it (it may open later)
+        validConns.push(conn);
+      }
+    } catch(e) {
+      console.error('Broadcast error (removing conn):', e);
+      // Don't add broken connections back
+    }
   });
+  state.connections = validConns;
 }
 
 function sendToHost(msg) {
@@ -3438,20 +3507,20 @@ function startRoundGuest() {
 function renderGameScreenOnline() {
   const me = state.players.find(p => p.id === state.myPlayerId);
   if (!me) return;
-  
+
   document.getElementById('game-round-num').textContent = state.currentRound;
   document.getElementById('game-round-total').textContent = state.totalRounds;
   document.getElementById('game-mode-label').textContent = 'أونلاين';
-  
+
   const letterEl = document.getElementById('letter-display');
   letterEl.textContent = state.currentLetter;
   letterEl.classList.remove('pop');
   void letterEl.offsetWidth;
   letterEl.classList.add('pop');
-  
+
   const badge = document.getElementById('current-player-badge');
   badge.innerHTML = `<span class="avatar">${me.avatar}</span><span>${me.name}</span>`;
-  
+
   const table = document.getElementById('answers-table');
   table.innerHTML = '';
   state.categories.forEach(catId => {
@@ -3475,8 +3544,20 @@ function renderGameScreenOnline() {
       }
     });
   });
-  
+
   showScreen('screen-game');
+}
+
+// Light update: refresh round info and badge without rebuilding the inputs (preserves focus while typing)
+function updateGameScreenOnlineLight() {
+  const me = state.players.find(p => p.id === state.myPlayerId);
+  if (!me) return;
+  const roundNumEl = document.getElementById('game-round-num');
+  const roundTotalEl = document.getElementById('game-round-total');
+  if (roundNumEl) roundNumEl.textContent = state.currentRound;
+  if (roundTotalEl) roundTotalEl.textContent = state.totalRounds;
+  const badge = document.getElementById('current-player-badge');
+  if (badge) badge.innerHTML = `<span class="avatar">${me.avatar}</span><span>${me.name}</span>`;
 }
 
 function leaveRoom() {
@@ -3494,6 +3575,135 @@ function leaveRoom() {
   state.myPlayerId = null;
   state.players = [];
   // Go back to online menu (one step back) instead of home
+  showScreen('screen-online-menu');
+}
+
+// Handle guest disconnection — show a reconnect overlay instead of kicking the player out
+function handleGuestDisconnect(reason) {
+  // Only show reconnect UI if we were actually in a game/lobby (not already leaving)
+  if (!state.roomCode || !state.myPlayerId) return;
+  // Stop the timer if running
+  stopTimer();
+  // Show reconnect overlay
+  const overlay = document.getElementById('connecting-overlay');
+  document.getElementById('connecting-title').textContent = '⚠️ ' + reason;
+  document.getElementById('connecting-msg').textContent = 'هل تريد محاولة إعادة الاتصال بالغرفة؟';
+  overlay.classList.add('active');
+  // Replace the cancel button with reconnect + leave buttons
+  const modal = overlay.querySelector('.modal');
+  // Remove any existing action buttons (besides the cancel one)
+  const oldActions = modal.querySelector('#reconnect-actions');
+  if (oldActions) oldActions.remove();
+  const actions = document.createElement('div');
+  actions.id = 'reconnect-actions';
+  actions.style.cssText = 'display:flex;gap:8px;margin-top:14px;';
+  actions.innerHTML = `
+    <button class="btn btn-primary btn-sm" style="flex:1;" onclick="attemptReconnect()">🔄 إعادة الاتصال</button>
+    <button class="btn btn-ghost btn-sm" style="flex:1;width:auto;" onclick="confirmLeaveFromDisconnect()">خروج</button>
+  `;
+  // Hide the default cancel button
+  const defaultCancel = modal.querySelector('button[onclick="cancelConnecting()"]');
+  if (defaultCancel) defaultCancel.style.display = 'none';
+  modal.appendChild(actions);
+}
+
+// Attempt to reconnect to the host
+function attemptReconnect() {
+  if (!state.roomCode) {
+    toast('لا يوجد كود غرفة', 'error');
+    confirmLeaveFromDisconnect();
+    return;
+  }
+  // Restore the connecting UI
+  const modal = document.querySelector('#connecting-overlay .modal');
+  const actions = document.getElementById('reconnect-actions');
+  if (actions) actions.remove();
+  const defaultCancel = modal.querySelector('button[onclick="cancelConnecting()"]');
+  if (defaultCancel) defaultCancel.style.display = '';
+  document.getElementById('connecting-title').textContent = 'جاري إعادة الاتصال...';
+  document.getElementById('connecting-msg').textContent = `الكود: ${state.roomCode}`;
+
+  // Clean up old peer
+  if (state.peer) {
+    try { state.peer.destroy(); } catch(e) {}
+    state.peer = null;
+  }
+  state.connections = [];
+
+  const code = state.roomCode;
+  const peerId = roomCodeToPeerId(code);
+  state.peer = new Peer({ debug: 1 });
+
+  state.peer.on('open', () => {
+    const conn = state.peer.connect(peerId, { reliable: true });
+    const connTimeout = setTimeout(() => {
+      if (!conn.open) {
+        document.getElementById('connecting-title').textContent = '⚠️ تعذر إعادة الاتصال';
+        document.getElementById('connecting-msg').textContent = 'تأكد أن المضيف ما زال في الغرفة.';
+      }
+    }, 15000);
+
+    conn.on('open', () => {
+      clearTimeout(connTimeout);
+      state.connections = [conn];
+      // Send rejoin request with the SAME player ID so the host can recognize us
+      const me = state.players.find(p => p.id === state.myPlayerId);
+      const myName = me ? me.name : 'لاعب';
+      const myAvatar = me ? me.avatar : selectedAvatar;
+      conn.send({
+        type: 'rejoin-request',
+        player: {
+          id: state.myPlayerId, name: myName, avatar: myAvatar,
+          isHost: false, isAI: false,
+          totalScore: me ? me.totalScore : 0,
+          roundScore: me ? me.roundScore : 0,
+          roundAnswers: me ? me.roundAnswers : {},
+          connected: true, connId: conn.peer,
+          finishOrder: me ? me.finishOrder : null,
+          submitted: me ? me.submitted : false
+        }
+      });
+      hideConnecting();
+      toast('تمت إعادة الاتصال ✓', 'success');
+    });
+    conn.on('data', (data) => handlePeerData(data, conn));
+    conn.on('close', () => handleGuestDisconnect('انقطع الاتصال بالمضيف'));
+    conn.on('error', () => handleGuestDisconnect('خطأ في الاتصال'));
+  });
+
+  state.peer.on('error', (err) => {
+    console.error('Reconnect peer error:', err);
+    document.getElementById('connecting-title').textContent = '⚠️ تعذر إعادة الاتصال';
+    document.getElementById('connecting-msg').textContent = 'المضيف قد يكون غادر الغرفة. اضغط "خروج" للعودة.';
+    // Re-show the action buttons
+    const modal2 = document.querySelector('#connecting-overlay .modal');
+    if (!document.getElementById('reconnect-actions')) {
+      const defaultCancel2 = modal2.querySelector('button[onclick="cancelConnecting()"]');
+      if (defaultCancel2) defaultCancel2.style.display = 'none';
+      const actions2 = document.createElement('div');
+      actions2.id = 'reconnect-actions';
+      actions2.style.cssText = 'display:flex;gap:8px;margin-top:14px;';
+      actions2.innerHTML = `
+        <button class="btn btn-primary btn-sm" style="flex:1;" onclick="attemptReconnect()">🔄 حاول مرة أخرى</button>
+        <button class="btn btn-ghost btn-sm" style="flex:1;width:auto;" onclick="confirmLeaveFromDisconnect()">خروج</button>
+      `;
+      modal2.appendChild(actions2);
+    }
+  });
+}
+
+function confirmLeaveFromDisconnect() {
+  hideConnecting();
+  // Clean up
+  if (state.peer) {
+    try { state.peer.destroy(); } catch(e) {}
+    state.peer = null;
+  }
+  state.connections = [];
+  state.roomCode = null;
+  state.isHost = false;
+  state.myPlayerId = null;
+  state.players = [];
   showScreen('screen-online-menu');
 }
 
