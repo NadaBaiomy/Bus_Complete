@@ -2873,6 +2873,66 @@ function goOnlineMenu() {
 const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ROOM_CODE_LENGTH = 6;
 
+// PeerJS configuration — use a reliable public broker server.
+// The default (0.peerjs.com) is often overloaded/unreliable, so we pin a specific server.
+const PEERJS_CONFIG = {
+  debug: 1,
+  host: '0.peerjs.com',
+  port: 443,
+  secure: true,
+  config: {
+    'iceServers': [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun3.l.google.com:19302' },
+      { urls: 'stun:stun4.l.google.com:19302' },
+      { urls: 'stun:global.stun.twilio.com:3478' }
+    ]
+  }
+};
+
+// Helper: create a Peer with proper error handling and config
+function createPeer(peerId) {
+  if (peerId) {
+    return new Peer(peerId, PEERJS_CONFIG);
+  }
+  return new Peer(PEERJS_CONFIG);
+}
+
+// Get a human-readable Arabic error message for a PeerJS error
+function getPeerErrorMessage(err) {
+  if (!err) return 'خطأ غير معروف';
+  switch (err.type) {
+    case 'browser-incompatible':
+      return 'متصفحك لا يدعم WebRTC. جرّب متصفحًا أحدث (Chrome/Firefox).';
+    case 'disconnected':
+      return 'انقطع الاتصال بالخادم. تحقق من الإنترنت وحاول مرة أخرى.';
+    case 'invalid-id':
+      return 'كود الغرفة غير صالح.';
+    case 'invalid-key':
+      return 'مشكلة في تكوين الخادم.';
+    case 'network':
+      return 'مشكلة في الشبكة. تحقق من اتصالك بالإنترنت.';
+    case 'peer-unavailable':
+      return 'الغرفة غير موجودة. تأكد من الكود وأن المضيف ما زال متصلاً.';
+    case 'ssl-unavailable':
+      return 'مشكلة في الاتصال الآمن (SSL).';
+    case 'server-error':
+      return 'خطأ في الخادم. حاول مرة أخرى بعد قليل.';
+    case 'socket-error':
+      return 'خطأ في الاتصال بالمقبس. تحقق من الإنترنت.';
+    case 'socket-closed':
+      return 'انقطع الاتصال بالخادم.';
+    case 'unavailable-id':
+      return 'الكود مستخدم حاليًا. أنشئ غرفة جديدة.';
+    case 'webrtc':
+      return 'مشكلة في WebRTC. قد يكون خلف جدار حماية.';
+    default:
+      return 'خطأ: ' + (err.type || err.message || 'غير معروف');
+  }
+}
+
 function generateRoomCode() {
   let code = '';
   for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
@@ -2882,9 +2942,11 @@ function generateRoomCode() {
 }
 
 // Build the peer ID from the room code
+// We use a project-specific prefix to avoid collisions with other PeerJS apps
+// on the public broker, and keep the code itself as the unique part.
 function roomCodeToPeerId(code) {
   if (!code) return null;
-  return 'buscomplete-' + code;
+  return 'buscomplete-game-2026-' + code;
 }
 
 // Validate the room code format (6 chars from the allowed set)
@@ -2935,37 +2997,54 @@ function createRoom() {
   state.roomCode = code;
   state.isHost = true;
   state.myPlayerId = 'host';
+  state._joinRetryCount = 0;
 
   showConnecting('جاري إنشاء الغرفة...', 'قد يستغرق ذلك بضع ثوانٍ');
 
-  // Use a safe ASCII peer ID derived from the Arabic code
+  doCreateRoom(name, code);
+}
+
+function doCreateRoom(name, code) {
+  // Clean up any existing peer
+  if (state.peer) {
+    try { state.peer.destroy(); } catch(e) {}
+    state.peer = null;
+  }
+
+  // Use a safe ASCII peer ID derived from the code
   const peerId = roomCodeToPeerId(code);
-  state.peer = new Peer(peerId, { debug: 1 });
-  
+  state.peer = createPeer(peerId);
+
+  // Timeout: if the peer doesn't connect to the broker within 15s, retry or show error
+  const openTimeout = setTimeout(() => {
+    if (state.peer && !state.peer.open) {
+      try { state.peer.destroy(); } catch(e) {}
+      state.peer = null;
+      handleCreateRoomFailure(name, code, 'انتهت مهلة الاتصال بالخادم');
+    }
+  }, 15000);
+
   state.peer.on('open', () => {
+    clearTimeout(openTimeout);
     hideConnecting();
+    state._joinRetryCount = 0;
     state.players = [{
       id: 'host', name: name, avatar: selectedAvatar, isHost: true, isAI: false,
       totalScore: 0, roundScore: 0, roundAnswers: {}, connected: true
     }];
     state.connections = [];
-    
+
     document.getElementById('lobby-code-display').textContent = code;
     initLobbyUI();
     showScreen('screen-lobby');
     toast('تم إنشاء الغرفة ✓', 'success');
   });
-  
+
   state.peer.on('connection', (conn) => {
-    // Add the connection to our list immediately (don't wait for 'open')
-    // PeerJS queues sends until the connection is open, so this is safe.
     if (!state.connections.includes(conn)) state.connections.push(conn);
-    conn.on('open', () => {
-      // Connection is now ready — already in the list
-    });
+    conn.on('open', () => {});
     conn.on('data', (data) => handlePeerData(data, conn));
     conn.on('close', () => {
-      // Player disconnected — remove from connections but keep in players list (marked as disconnected)
       state.connections = state.connections.filter(c => c !== conn);
       const idx = state.players.findIndex(p => p.connId === conn.peer);
       if (idx >= 0) {
@@ -2977,20 +3056,73 @@ function createRoom() {
     });
     conn.on('error', (err) => {
       console.error('Host conn error:', err);
-      // Remove broken connection
       state.connections = state.connections.filter(c => c !== conn);
     });
   });
-  
+
+  state.peer.on('disconnected', () => {
+    if (state.peer && !state.peer.destroyed) {
+      console.log('Peer disconnected, attempting reconnect...');
+      try { state.peer.reconnect(); } catch(e) {}
+    }
+  });
+
   state.peer.on('error', (err) => {
-    hideConnecting();
+    clearTimeout(openTimeout);
     console.error('Peer error:', err);
-    let msg = 'تعذر إنشاء الغرفة';
-    if (err.type === 'unavailable-id') msg = 'الكود مستخدم، حاول مرة أخرى';
-    toast(msg, 'error');
     try { state.peer.destroy(); } catch(e) {}
     state.peer = null;
+    handleCreateRoomFailure(name, code, getPeerErrorMessage(err));
   });
+}
+
+function handleCreateRoomFailure(name, code, reason) {
+  state._joinRetryCount = (state._joinRetryCount || 0) + 1;
+  if (state._joinRetryCount <= 2) {
+    // Auto-retry up to 2 times
+    showConnecting('إعادة المحاولة...', `محاولة ${state._joinRetryCount + 1} من 3`);
+    setTimeout(() => doCreateRoom(name, code), 1500);
+  } else {
+    hideConnecting();
+    // Generate a new code and show retry option
+    toast('تعذر إنشاء الغرفة: ' + reason, 'error');
+    showConnectionFailureOverlay(reason, () => {
+      const newCode = generateRoomCode();
+      state.roomCode = newCode;
+      state._joinRetryCount = 0;
+      showConnecting('جاري إنشاء الغرفة...', 'قد يستغرق ذلك بضع ثوانٍ');
+      doCreateRoom(name, newCode);
+    });
+  }
+}
+
+// Show a failure overlay with a retry button
+function showConnectionFailureOverlay(reason, retryCallback) {
+  const overlay = document.getElementById('connecting-overlay');
+  document.getElementById('connecting-title').textContent = '⚠️ تعذر الاتصال';
+  document.getElementById('connecting-msg').textContent = reason;
+  overlay.classList.add('active');
+  const modal = overlay.querySelector('.modal');
+  // Remove existing actions
+  const oldActions = modal.querySelector('#reconnect-actions');
+  if (oldActions) oldActions.remove();
+  const defaultCancel = modal.querySelector('button[onclick="cancelConnecting()"]');
+  if (defaultCancel) defaultCancel.style.display = 'none';
+  const actions = document.createElement('div');
+  actions.id = 'reconnect-actions';
+  actions.style.cssText = 'display:flex;gap:8px;margin-top:14px;';
+  actions.innerHTML = `
+    <button class="btn btn-primary btn-sm" style="flex:1;" id="retry-conn-btn">🔄 إعادة المحاولة</button>
+    <button class="btn btn-ghost btn-sm" style="flex:1;width:auto;" onclick="confirmLeaveFromDisconnect()">إلغاء</button>
+  `;
+  modal.appendChild(actions);
+  document.getElementById('retry-conn-btn').onclick = () => {
+    // Clean up
+    const a = document.getElementById('reconnect-actions');
+    if (a) a.remove();
+    if (defaultCancel) defaultCancel.style.display = '';
+    retryCallback();
+  };
 }
 
 // Real-time input handler for the join code field
@@ -3042,6 +3174,7 @@ function joinRoom() {
   state.isHost = false;
   state.myPlayerId = 'guest_' + Math.random().toString(36).substr(2, 9);
   state.mode = 'online';
+  state._joinRetryCount = 0;
 
   // Add myself locally so I show up immediately
   state.players = [{
@@ -3053,26 +3186,46 @@ function joinRoom() {
 
   showConnecting('جاري الانضمام للغرفة...', `الكود: ${code}`);
 
+  doJoinRoom(name, code);
+}
+
+function doJoinRoom(name, code) {
+  // Clean up any existing peer
+  if (state.peer) {
+    try { state.peer.destroy(); } catch(e) {}
+    state.peer = null;
+  }
+
   // Build peer ID from the code
   const peerId = roomCodeToPeerId(code);
-  state.peer = new Peer({ debug: 1 });
+  state.peer = createPeer(null);
+
+  // Timeout: if the peer doesn't connect to the broker within 15s, retry or show error
+  const openTimeout = setTimeout(() => {
+    if (state.peer && !state.peer.open) {
+      try { state.peer.destroy(); } catch(e) {}
+      state.peer = null;
+      handleJoinRoomFailure(name, code, 'انتهت مهلة الاتصال بالخادم');
+    }
+  }, 15000);
 
   state.peer.on('open', () => {
+    clearTimeout(openTimeout);
     const conn = state.peer.connect(peerId, { reliable: true });
 
     // Set a connection timeout — if host doesn't respond, show error
     const connTimeout = setTimeout(() => {
       if (!conn.open) {
-        hideConnecting();
-        toast('تعذر الاتصال بالمضيف. تأكد من الكود وأن الغرفة ما زالت مفتوحة.', 'error');
         try { state.peer.destroy(); } catch(e) {}
         state.peer = null;
+        handleJoinRoomFailure(name, code, 'تعذر الاتصال بالمضيف. تأكد من الكود وأن الغرفة ما زالت مفتوحة.');
       }
     }, 15000);
 
     conn.on('open', () => {
       clearTimeout(connTimeout);
       state.connections = [conn];
+      state._joinRetryCount = 0;
       // Send join request
       conn.send({
         type: 'join-request',
@@ -3092,27 +3245,48 @@ function joinRoom() {
     });
     conn.on('data', (data) => handlePeerData(data, conn));
     conn.on('close', () => {
-      // Don't kick the player out immediately — offer reconnection
       handleGuestDisconnect('انقطع الاتصال بالمضيف');
     });
     conn.on('error', (err) => {
       console.error('Conn error:', err);
-      hideConnecting();
-      // Don't kick out on transient errors
-      handleGuestDisconnect('خطأ في الاتصال');
+      clearTimeout(connTimeout);
+      try { state.peer.destroy(); } catch(e) {}
+      state.peer = null;
+      handleJoinRoomFailure(name, code, 'خطأ في الاتصال');
     });
   });
 
+  state.peer.on('disconnected', () => {
+    if (state.peer && !state.peer.destroyed) {
+      console.log('Peer disconnected, attempting reconnect...');
+      try { state.peer.reconnect(); } catch(e) {}
+    }
+  });
+
   state.peer.on('error', (err) => {
-    hideConnecting();
+    clearTimeout(openTimeout);
     console.error('Peer error:', err);
-    let msg = 'تعذر الانضمام للغرفة';
-    if (err.type === 'peer-unavailable') msg = 'الغرفة غير موجودة. تأكد من الكود.';
-    else if (err.type === 'network' || err.type === 'server-error') msg = 'مشكلة في الشبكة. تحقق من الإنترنت.';
-    toast(msg, 'error');
     try { state.peer.destroy(); } catch(e) {}
     state.peer = null;
+    handleJoinRoomFailure(name, code, getPeerErrorMessage(err));
   });
+}
+
+function handleJoinRoomFailure(name, code, reason) {
+  state._joinRetryCount = (state._joinRetryCount || 0) + 1;
+  if (state._joinRetryCount <= 2) {
+    // Auto-retry up to 2 times
+    showConnecting('إعادة المحاولة...', `محاولة ${state._joinRetryCount + 1} من 3 — الكود: ${code}`);
+    setTimeout(() => doJoinRoom(name, code), 1500);
+  } else {
+    hideConnecting();
+    toast('تعذر الانضمام للغرفة: ' + reason, 'error');
+    showConnectionFailureOverlay(reason, () => {
+      state._joinRetryCount = 0;
+      showConnecting('جاري الانضمام للغرفة...', `الكود: ${code}`);
+      doJoinRoom(name, code);
+    });
+  }
 }
 
 function handlePeerData(data, conn) {
@@ -3795,7 +3969,7 @@ function attemptReconnect() {
 
   const code = state.roomCode;
   const peerId = roomCodeToPeerId(code);
-  state.peer = new Peer({ debug: 1 });
+  state.peer = createPeer(null);
 
   state.peer.on('open', () => {
     const conn = state.peer.connect(peerId, { reliable: true });
