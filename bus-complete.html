@@ -2215,7 +2215,13 @@ function startRound() {
   state.aiAnsweredThisRound = false;
   state.reviewOverrides = {};
   state.finishCounter = 0;
-  
+  state.graceActive = false;
+  state.graceTimeLeft = null;
+  if (state.graceInterval) {
+    clearInterval(state.graceInterval);
+    state.graceInterval = null;
+  }
+
   // Reset round data
   state.players.forEach(p => {
     p.roundAnswers = {};
@@ -2223,7 +2229,7 @@ function startRound() {
     p.finishOrder = null;
     p.submitted = false;
   });
-  
+
   const letter = pickLetter();
   sound.letter();
   vibrate(50);
@@ -3189,22 +3195,24 @@ function handlePeerData(data, conn) {
             state.finishCounter = (state.finishCounter || 0) + 1;
             player.finishOrder = state.finishCounter;
             player.finishTime = data.finishTime;
-            // Notify everyone who finished first
+            // First finisher: start the 10-second grace countdown for everyone
             if (state.finishCounter === 1) {
-              toast(`🏁 ${player.name} أنهى الجولة أولاً!`, 'success');
+              toast(`🏁 ${player.name} أنهى الجولة أولاً! 10 ثوانٍ متبقية!`, 'success');
               // Broadcast notification + state to all guests
               broadcastState({
                 type: 'first-finished-notification',
                 playerName: player.name,
                 playerId: player.id
               });
+              // Start the 10-second grace countdown (host-controlled)
+              startGraceCountdown(10);
               broadcastState({ type: 'state-sync', state: serializeState() });
             } else {
               toast(`${player.name} أنهى الجولة (#${player.finishOrder})`, 'info');
               broadcastState({ type: 'state-sync', state: serializeState() });
             }
           }
-          // Check if all submitted or time up
+          // Check if all submitted (if everyone pressed complete, end immediately)
           checkAllSubmitted();
         }
       }
@@ -3216,7 +3224,7 @@ function handlePeerData(data, conn) {
         if (data.playerName) {
           sound.complete();
           vibrate(80);
-          toast(`🏁 ${data.playerName} أنهى الجولة أولاً!`, 'info');
+          toast(`🏁 ${data.playerName} أنهى الجولة أولاً! 10 ثوانٍ متبقية!`, 'info');
           // Show a banner in the game screen
           const gameHeader = document.querySelector('.game-header');
           if (gameHeader && document.querySelector('.screen.active')?.id === 'screen-game') {
@@ -3224,12 +3232,48 @@ function handlePeerData(data, conn) {
             if (!banner) {
               banner = document.createElement('div');
               banner.id = 'live-first-finisher';
-              banner.style.cssText = 'background:linear-gradient(135deg,#10B981 0%,#059669 100%);color:white;padding:10px 14px;border-radius:12px;margin-bottom:10px;text-align:center;font-weight:700;font-size:14px;animation:pop 0.4s ease;';
+              banner.style.cssText = 'background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%);color:white;padding:12px 14px;border-radius:12px;margin-bottom:10px;text-align:center;font-weight:700;font-size:15px;animation:pop 0.4s ease;';
               gameHeader.parentNode.insertBefore(banner, gameHeader.nextSibling);
             }
-            banner.innerHTML = `🏁 ${data.playerName} ضغط "أتوبيس كومبليت" أولاً! أسرع!`;
-            // Remove after 5 seconds
-            setTimeout(() => { if (banner) banner.remove(); }, 5000);
+            banner.innerHTML = `🏁 ${data.playerName} ضغط "أتوبيس كومبليت"!<br><span style="font-size:13px;">عندك <b id="grace-countdown">10</b> ثوانٍ لإكمال إجاباتك</span>`;
+            // Don't auto-remove — it stays until round ends
+          }
+        }
+      }
+      break;
+
+    case 'grace-countdown':
+      // Guest receives grace countdown updates from host
+      if (!state.isHost) {
+        state.graceTimeLeft = data.secondsLeft;
+        // Update the countdown display
+        const cdEl = document.getElementById('grace-countdown');
+        if (cdEl) cdEl.textContent = data.secondsLeft;
+        // Update the main timer display to show grace countdown
+        const timerEl = document.getElementById('timer-display');
+        if (timerEl) {
+          timerEl.textContent = data.secondsLeft;
+          timerEl.classList.add('warn');
+        }
+        if (data.secondsLeft <= 3 && data.secondsLeft > 0) {
+          sound.tick();
+          vibrate(30);
+        }
+        if (data.secondsLeft <= 0) {
+          // Grace ended — lock inputs and send answers to host
+          stopTimer();
+          document.querySelectorAll('.answer-input').forEach(inp => {
+            inp.classList.add('locked');
+            inp.disabled = true;
+          });
+          const me = state.players.find(p => p.id === state.myPlayerId);
+          if (me && !me.submitted) {
+            sendToHost({
+              type: 'answers-submitted',
+              playerId: state.myPlayerId,
+              answers: me.roundAnswers,
+              pressedComplete: false
+            });
           }
         }
       }
@@ -3375,17 +3419,77 @@ function checkAllSubmitted() {
   // Called by host
   const humanPlayers = state.players.filter(p => !p.isAI);
   const allSubmitted = humanPlayers.every(p => p.submitted);
-  
-  // If grace period enabled, give extra time after first submission
-  if (allSubmitted || state.timeLeft <= 0) {
-    // End round
+
+  // If everyone has submitted, end immediately (no need to wait for grace countdown)
+  if (allSubmitted) {
     finishOnlineRound();
-  } else if (state.settings.grace && !state.graceStarted) {
-    state.graceStarted = true;
-    state.timeLeft = Math.min(state.settings.graceSec, state.timeLeft + state.settings.graceSec);
-    broadcastState({ type: 'state-sync', state: serializeState() });
-    toast('مهلة إضافية - أسرعوا!', 'info');
   }
+  // Otherwise, the grace countdown (started when first player pressed complete) will end the round.
+  // If the main timer runs out before the grace countdown, end then.
+  if (state.timeLeft <= 0 && !state.graceActive) {
+    finishOnlineRound();
+  }
+}
+
+// Start the 10-second grace countdown after the first player presses "Bus Complete"
+function startGraceCountdown(seconds) {
+  if (state.graceActive) return; // Already running
+  state.graceActive = true;
+  state.graceTimeLeft = seconds;
+  // Stop the main timer — the grace countdown takes over
+  stopTimer();
+  // Update host's own timer display
+  const timerEl = document.getElementById('timer-display');
+  if (timerEl) {
+    timerEl.textContent = state.graceTimeLeft;
+    timerEl.classList.add('warn');
+  }
+  // Show banner on host's screen too
+  const gameHeader = document.querySelector('.game-header');
+  if (gameHeader && document.querySelector('.screen.active')?.id === 'screen-game') {
+    let banner = document.getElementById('live-first-finisher');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'live-first-finisher';
+      banner.style.cssText = 'background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%);color:white;padding:12px 14px;border-radius:12px;margin-bottom:10px;text-align:center;font-weight:700;font-size:15px;animation:pop 0.4s ease;';
+      gameHeader.parentNode.insertBefore(banner, gameHeader.nextSibling);
+    }
+    const firstName = state.players.find(p => p.finishOrder === 1)?.name || '';
+    banner.innerHTML = `🏁 ${firstName} ضغط "أتوبيس كومبليت"!<br><span style="font-size:13px;">عندك <b id="grace-countdown">${state.graceTimeLeft}</b> ثوانٍ لإكمال إجاباتك</span>`;
+  }
+
+  // Broadcast initial countdown to all guests
+  broadcastState({ type: 'grace-countdown', secondsLeft: state.graceTimeLeft });
+
+  // Tick every second
+  state.graceInterval = setInterval(() => {
+    state.graceTimeLeft--;
+    // Update host's display
+    const cdEl = document.getElementById('grace-countdown');
+    if (cdEl) cdEl.textContent = state.graceTimeLeft;
+    const timerEl2 = document.getElementById('timer-display');
+    if (timerEl2) {
+      timerEl2.textContent = state.graceTimeLeft;
+      timerEl2.classList.add('warn');
+    }
+    if (state.graceTimeLeft <= 3 && state.graceTimeLeft > 0) {
+      sound.tick();
+      vibrate(30);
+    }
+    // Broadcast countdown to guests
+    broadcastState({ type: 'grace-countdown', secondsLeft: state.graceTimeLeft });
+    if (state.graceTimeLeft <= 0) {
+      // Grace ended
+      clearInterval(state.graceInterval);
+      state.graceInterval = null;
+      state.graceActive = false;
+      // Collect answers from anyone who didn't submit yet (host side)
+      state.players.forEach(p => {
+        if (!p.submitted) p.submitted = true;
+      });
+      finishOnlineRound();
+    }
+  }, 1000);
 }
 
 function getFirstFinisher() {
@@ -3398,6 +3502,15 @@ function finishOnlineRound() {
   if (state.roundEnding) return; // Prevent double-finish
   state.roundEnding = true;
   stopTimer();
+  // Stop the grace countdown if it's running
+  if (state.graceInterval) {
+    clearInterval(state.graceInterval);
+    state.graceInterval = null;
+  }
+  state.graceActive = false;
+  // Remove the live banner
+  const banner = document.getElementById('live-first-finisher');
+  if (banner) banner.remove();
   // Calculate scores
   calculateScores();
   state.players.forEach(p => p.submitted = false);
@@ -3494,12 +3607,17 @@ function hostStartMatch() {
 
 function startRoundGuest() {
   // Guest receives round start
-  state.players.forEach(p => { p.roundAnswers = {}; p.roundScore = 0; p.finishOrder = null; });
+  state.players.forEach(p => { p.roundAnswers = {}; p.roundScore = 0; p.finishOrder = null; p.submitted = false; });
   state.reviewOverrides = {};
   state.finishCounter = 0;
+  state.graceActive = false;
+  state.graceTimeLeft = null;
   // Remove any live first-finisher banner
   const oldBanner = document.getElementById('live-first-finisher');
   if (oldBanner) oldBanner.remove();
+  // Reset the timer display styling
+  const timerEl = document.getElementById('timer-display');
+  if (timerEl) timerEl.classList.remove('warn');
   renderGameScreenOnline();
   startTimer();
 }
@@ -3731,12 +3849,15 @@ onCompleteClick = function() {
         me.finishOrder = state.finishCounter;
         me.finishTime = finishTime;
         if (state.finishCounter === 1) {
-          toast(`🏁 أنت أنهيت الجولة أولاً!`, 'success');
+          // First finisher: start the 10-second grace countdown for everyone
+          toast(`🏁 أنت أنهيت الجولة أولاً! 10 ثوانٍ متبقية!`, 'success');
           broadcastState({
             type: 'first-finished-notification',
             playerName: me.name,
             playerId: me.id
           });
+          // Start the grace countdown (host-controlled, broadcasts to guests)
+          startGraceCountdown(10);
           broadcastState({ type: 'state-sync', state: serializeState() });
         } else {
           toast(`أنهيت الجولة (#${me.finishOrder})`, 'info');
