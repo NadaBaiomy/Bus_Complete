@@ -1123,6 +1123,8 @@ body {
     <p class="text-muted" style="font-size:14px;">الحرف: <b id="results-letter" style="color:var(--primary);"></b></p>
   </div>
 
+  <div id="first-finisher-banner" style="display:none;background:linear-gradient(135deg,#10B981 0%,#059669 100%);color:white;border-radius:16px;padding:14px 16px;margin-bottom:14px;font-size:15px;font-weight:600;text-align:center;box-shadow:0 8px 20px rgba(16,185,129,0.35);animation:pop 0.4s ease;"></div>
+
   <div class="card">
     <div class="card-title">📊 جدول الإجابات</div>
     <div style="overflow-x:auto;">
@@ -2209,22 +2211,29 @@ function startRound() {
   state.currentRound++;
   state.aiAnsweredThisRound = false;
   state.reviewOverrides = {};
+  state.finishCounter = 0;
   
   // Reset round data
   state.players.forEach(p => {
     p.roundAnswers = {};
     p.roundScore = 0;
+    p.finishOrder = null;
+    p.submitted = false;
   });
   
   const letter = pickLetter();
   sound.letter();
   vibrate(50);
-  
+
   // Generate AI answers immediately (will be revealed at end)
   state.players.filter(p => p.isAI).forEach(ai => {
     ai.roundAnswers = generateAIAnswers(letter, state.categories);
   });
-  
+
+  // Remove any live first-finisher banner
+  const oldBanner = document.getElementById('live-first-finisher');
+  if (oldBanner) oldBanner.remove();
+
   renderGameScreen();
   startTimer();
 }
@@ -2242,10 +2251,11 @@ function startLocalPlayerTurn() {
   if (state.currentPlayerIndex === 0) {
     state.currentRound++;
     state.reviewOverrides = {};
+    state.finishCounter = 0;
     const letter = pickLetter();
     sound.letter();
     // Reset answers
-    state.players.forEach(p => { p.roundAnswers = {}; p.roundScore = 0; });
+    state.players.forEach(p => { p.roundAnswers = {}; p.roundScore = 0; p.finishOrder = null; });
   }
   
   renderGameScreen();
@@ -2388,6 +2398,13 @@ function onCompleteClick() {
   
   sound.complete();
   vibrate(100);
+  
+  // Track finish order (who pressed complete first)
+  if (currentPlayer.finishOrder === null || currentPlayer.finishOrder === undefined) {
+    state.finishCounter = (state.finishCounter || 0) + 1;
+    currentPlayer.finishOrder = state.finishCounter;
+    currentPlayer.finishTime = state.roundDuration - state.timeLeft; // seconds taken
+  }
   
   endRoundForCurrentPlayer();
 }
@@ -2536,6 +2553,11 @@ function goToReview() {
 
 function confirmReview() {
   calculateScores();
+  // For online mode: broadcast results to guests
+  if (state.mode === 'online' && state.isHost) {
+    state.phase = (state.currentRound >= state.totalRounds) ? 'final' : 'results';
+    broadcastState({ type: 'state-sync', state: serializeState() });
+  }
   if (state.currentRound >= state.totalRounds) {
     showFinalResults();
   } else {
@@ -2593,26 +2615,45 @@ function calculateScores() {
 // ============ شاشة النتائج ============
 function showRoundResults() {
   document.getElementById('results-letter').textContent = state.currentLetter;
-  
+
+  // Show "first to finish" banner if anyone pressed Bus Complete (only meaningful in online mode where players race)
+  const firstFinisher = getFirstFinisher();
+  const bannerEl = document.getElementById('first-finisher-banner');
+  if (bannerEl) {
+    // Only show banner in online mode (in single/local the human is the only one who can press the button)
+    if (firstFinisher && state.mode === 'online') {
+      bannerEl.style.display = 'block';
+      const timeStr = firstFinisher.finishTime != null ? ` (${firstFinisher.finishTime} ثانية)` : '';
+      bannerEl.innerHTML = `🏁 <b>أول من أنهى الجولة:</b> ${firstFinisher.avatar} ${firstFinisher.name}${timeStr}`;
+    } else {
+      bannerEl.style.display = 'none';
+    }
+  }
+
   // Build results table
   const table = document.getElementById('results-table');
   let html = '<thead><tr><th>الفئة</th>';
   state.players.forEach(p => {
-    html += `<th>${p.avatar}<br><small>${p.name}</small></th>`;
+    // Only show finish badge in online mode
+    let finishBadge = '';
+    if (state.mode === 'online') {
+      finishBadge = p.finishOrder === 1 ? ' 🏁' : (p.finishOrder ? ` #${p.finishOrder}` : '');
+    }
+    html += `<th>${p.avatar}<br><small>${p.name}${finishBadge}</small></th>`;
   });
   html += '</tr></thead><tbody>';
-  
+
   state.categories.forEach(cat => {
     const catObj = ALL_CATEGORIES.find(c => c.id === cat);
     html += `<tr><td class="cat-cell">${catObj.icon} ${catObj.label}</td>`;
-    
+
     // For each player, show answer + points
     state.players.forEach(p => {
       const ans = (p.roundAnswers[cat] || '').trim();
       const valid = ans && startsWithLetter(ans, state.currentLetter) && state.reviewOverrides[`${p.id}_${cat}`] !== false;
       const override = state.reviewOverrides[`${p.id}_${cat}`];
       const isInvalid = override === false || (ans && !startsWithLetter(ans, state.currentLetter));
-      
+
       // Calculate points for this category
       let pts = 0;
       if (ans && valid) {
@@ -2627,38 +2668,47 @@ function showRoundResults() {
         }).length;
         pts = count === 1 ? state.settings.uniquePts : state.settings.sharedPts;
       }
-      
+
       const ptsClass = pts === state.settings.uniquePts ? 'pts-10' : (pts === state.settings.sharedPts ? 'pts-5' : 'pts-0');
       html += `<td>
         <div class="answer-cell ${isInvalid ? 'text-muted' : ''}">${ans || '—'}</div>
         <div class="pts ${ptsClass}">${pts}</div>
       </td>`;
     });
-    
+
     html += '</tr>';
   });
-  
+
   // Totals row
   html += '<tr><td class="cat-cell">المجموع</td>';
   state.players.forEach(p => {
     html += `<td><div class="pts pts-10" style="font-size:18px;">${p.roundScore}</div></td>`;
   });
   html += '</tr></tbody>';
-  
+
   table.innerHTML = html;
-  
+
   renderScoreboard('scoreboard', false);
-  
+
   // Update next round button
   const nextBtn = document.getElementById('next-round-btn');
-  if (state.currentRound >= state.totalRounds) {
-    nextBtn.textContent = 'النتيجة النهائية 🏆';
-    nextBtn.onclick = () => showFinalResults();
+  // In online mode, only host can advance to next round
+  if (state.mode === 'online' && !state.isHost) {
+    nextBtn.textContent = '⏳ بانتظار المضيف لبدء الجولة التالية...';
+    nextBtn.disabled = true;
+    nextBtn.style.opacity = '0.6';
   } else {
-    nextBtn.textContent = 'الجولة التالية ←';
-    nextBtn.onclick = () => nextRound();
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = '1';
+    if (state.currentRound >= state.totalRounds) {
+      nextBtn.textContent = 'النتيجة النهائية 🏆';
+      nextBtn.onclick = () => showFinalResults();
+    } else {
+      nextBtn.textContent = 'الجولة التالية ←';
+      nextBtn.onclick = () => nextRound();
+    }
   }
-  
+
   showScreen('screen-results');
 }
 
@@ -2666,20 +2716,23 @@ function renderScoreboard(elementId, isFinal) {
   const sorted = [...state.players].sort((a, b) => b.totalScore - a.totalScore);
   const container = document.getElementById(elementId);
   container.innerHTML = '';
-  
+
   sorted.forEach((p, i) => {
     const rank = i + 1;
     let rankClass = '';
     if (rank === 1) rankClass = 'gold';
     else if (rank === 2) rankClass = 'silver';
     else if (rank === 3) rankClass = 'bronze';
-    
+
+    // Show "first to finish" badge if this player finished first this round (only in online mode)
+    const firstBadge = (!isFinal && state.mode === 'online' && p.finishOrder === 1) ? ' <span style="background:#10B981;color:white;font-size:10px;padding:2px 6px;border-radius:999px;font-weight:700;">🏁 أول من أنهى</span>' : '';
+
     const row = document.createElement('div');
     row.className = 'score-row' + (rank === 1 && isFinal ? ' winner' : '');
     row.innerHTML = `
       <div class="score-rank ${rankClass}">${rank}</div>
       <div>
-        <div class="score-name">${p.avatar} ${p.name}${p.isAI ? ' 🤖' : ''}</div>
+        <div class="score-name">${p.avatar} ${p.name}${p.isAI ? ' 🤖' : ''}${firstBadge}</div>
         <div class="score-detail">${isFinal ? 'النتيجة النهائية' : `هذه الجولة: ${p.roundScore} نقطة`}</div>
       </div>
       <div class="score-total">${p.totalScore}</div>
@@ -2709,19 +2762,27 @@ function nextRound() {
 function showFinalResults() {
   const sorted = [...state.players].sort((a, b) => b.totalScore - a.totalScore);
   const winner = sorted[0];
-  
+
+  // For online mode: ensure phase is set to 'final' so guests see final screen
+  if (state.mode === 'online') {
+    state.phase = 'final';
+    if (state.isHost) {
+      broadcastState({ type: 'state-sync', state: serializeState() });
+    }
+  }
+
   document.getElementById('winner-name').textContent = `${winner.avatar} ${winner.name}`;
   document.getElementById('winner-score').textContent = `${winner.totalScore} نقطة`;
-  
+
   renderScoreboard('final-scoreboard', true);
-  
+
   const stats = `${state.totalRounds} جولات • ${state.players.length} لاعبون • الحروف المستخدمة: ${state.usedLetters.join('، ')}`;
   document.getElementById('final-stats').textContent = stats;
-  
+
   sound.win();
   launchConfetti();
   vibrate([100, 50, 100, 50, 200]);
-  
+
   showScreen('screen-final');
 }
 
@@ -2879,20 +2940,41 @@ function joinRoom() {
   let code = document.getElementById('join-code').value.trim().toUpperCase();
   if (!name) { toast('أدخل اسمك أولاً', 'error'); return; }
   if (code.length !== 6) { toast('أدخل كود الغرفة المكون من 6 أحرف', 'error'); return; }
-  
+
   savePlayerName(name, selectedAvatar);
   state.roomCode = code;
   state.isHost = false;
   state.myPlayerId = 'guest_' + Math.random().toString(36).substr(2, 9);
-  
+  state.mode = 'online';
+
+  // Add myself locally so I show up immediately
+  state.players = [{
+    id: state.myPlayerId, name: name, avatar: selectedAvatar,
+    isHost: false, isAI: false, totalScore: 0, roundScore: 0,
+    roundAnswers: {}, connected: true, finishOrder: null, submitted: false
+  }];
+  state.connections = [];
+
   showConnecting('جاري الانضمام للغرفة...', `الكود: ${code}`);
-  
+
   const peerId = 'buscomplete-' + code;
   state.peer = new Peer({ debug: 1 });
-  
+
   state.peer.on('open', () => {
     const conn = state.peer.connect(peerId, { reliable: true });
+
+    // Set a connection timeout — if host doesn't respond, show error
+    const connTimeout = setTimeout(() => {
+      if (!conn.open) {
+        hideConnecting();
+        toast('تعذر الاتصال بالمضيف. تأكد من الكود وأن الغرفة ما زالت مفتوحة.', 'error');
+        try { state.peer.destroy(); } catch(e) {}
+        state.peer = null;
+      }
+    }, 15000);
+
     conn.on('open', () => {
+      clearTimeout(connTimeout);
       state.connections = [conn];
       // Send join request
       conn.send({
@@ -2900,22 +2982,35 @@ function joinRoom() {
         player: {
           id: state.myPlayerId, name: name, avatar: selectedAvatar,
           isHost: false, isAI: false, totalScore: 0, roundScore: 0,
-          roundAnswers: {}, connected: true, connId: conn.peer
+          roundAnswers: {}, connected: true, connId: conn.peer,
+          finishOrder: null, submitted: false
         }
       });
+      // Show lobby screen immediately (will be updated by host's state-sync)
+      document.getElementById('lobby-code-display').textContent = state.roomCode;
+      initLobbyUI();
+      showScreen('screen-lobby');
+      hideConnecting();
+      toast('تم الانضمام للغرفة ✓', 'success');
     });
     conn.on('data', (data) => handlePeerData(data, conn));
     conn.on('close', () => {
       toast('انقطع الاتصال بالمضيف', 'error');
       setTimeout(() => goHome(), 1500);
     });
+    conn.on('error', (err) => {
+      console.error('Conn error:', err);
+      hideConnecting();
+      toast('خطأ في الاتصال بالغرفة', 'error');
+    });
   });
-  
+
   state.peer.on('error', (err) => {
     hideConnecting();
     console.error('Peer error:', err);
     let msg = 'تعذر الانضمام للغرفة';
     if (err.type === 'peer-unavailable') msg = 'الغرفة غير موجودة. تأكد من الكود.';
+    else if (err.type === 'network' || err.type === 'server-error') msg = 'مشكلة في الشبكة. تحقق من الإنترنت.';
     toast(msg, 'error');
     try { state.peer.destroy(); } catch(e) {}
     state.peer = null;
@@ -2951,15 +3046,31 @@ function handlePeerData(data, conn) {
       // Guest receives state from host
       if (!state.isHost) {
         applySerializedState(data.state);
-        if (state.phase === 'lobby' || data.state.phase === 'lobby') {
+        const targetPhase = data.state.phase || state.phase;
+        if (targetPhase === 'lobby') {
+          // Make sure we're showing the lobby screen
+          if (state.phase !== 'lobby') {
+            hideConnecting();
+            initLobbyUI();
+            showScreen('screen-lobby');
+          }
           document.getElementById('lobby-code-display').textContent = state.roomCode;
           renderLobbyPlayers();
           updateGuestLobbyView();
-        } else if (data.state.phase === 'game') {
+        } else if (targetPhase === 'game') {
+          hideConnecting();
           renderGameScreenOnline();
-        } else if (data.state.phase === 'results') {
+        } else if (targetPhase === 'review') {
+          hideConnecting();
+          if (state.isHost === false) {
+            // Guests see the review screen too (host does the review)
+            renderGuestReviewScreen();
+          }
+        } else if (targetPhase === 'results') {
+          hideConnecting();
           showRoundResults();
-        } else if (data.state.phase === 'final') {
+        } else if (targetPhase === 'final') {
+          hideConnecting();
           showFinalResults();
         }
       }
@@ -2980,8 +3091,53 @@ function handlePeerData(data, conn) {
         if (player) {
           player.roundAnswers = data.answers;
           player.submitted = true;
+          // Track finish order: who pressed "Bus Complete" first
+          if (data.pressedComplete && (player.finishOrder === null || player.finishOrder === undefined)) {
+            state.finishCounter = (state.finishCounter || 0) + 1;
+            player.finishOrder = state.finishCounter;
+            player.finishTime = data.finishTime;
+            // Notify everyone who finished first
+            if (state.finishCounter === 1) {
+              toast(`🏁 ${player.name} أنهى الجولة أولاً!`, 'success');
+              // Broadcast notification + state to all guests
+              broadcastState({
+                type: 'first-finished-notification',
+                playerName: player.name,
+                playerId: player.id
+              });
+              broadcastState({ type: 'state-sync', state: serializeState() });
+            } else {
+              toast(`${player.name} أنهى الجولة (#${player.finishOrder})`, 'info');
+              broadcastState({ type: 'state-sync', state: serializeState() });
+            }
+          }
           // Check if all submitted or time up
           checkAllSubmitted();
+        }
+      }
+      break;
+
+    case 'first-finished-notification':
+      // Guest receives notification of who finished first
+      if (!state.isHost) {
+        if (data.playerName) {
+          sound.complete();
+          vibrate(80);
+          toast(`🏁 ${data.playerName} أنهى الجولة أولاً!`, 'info');
+          // Show a banner in the game screen
+          const gameHeader = document.querySelector('.game-header');
+          if (gameHeader && document.querySelector('.screen.active')?.id === 'screen-game') {
+            let banner = document.getElementById('live-first-finisher');
+            if (!banner) {
+              banner = document.createElement('div');
+              banner.id = 'live-first-finisher';
+              banner.style.cssText = 'background:linear-gradient(135deg,#10B981 0%,#059669 100%);color:white;padding:10px 14px;border-radius:12px;margin-bottom:10px;text-align:center;font-weight:700;font-size:14px;animation:pop 0.4s ease;';
+              gameHeader.parentNode.insertBefore(banner, gameHeader.nextSibling);
+            }
+            banner.innerHTML = `🏁 ${data.playerName} ضغط "أتوبيس كومبليت" أولاً! أسرع!`;
+            // Remove after 5 seconds
+            setTimeout(() => { if (banner) banner.remove(); }, 5000);
+          }
         }
       }
       break;
@@ -3022,18 +3178,54 @@ function handlePeerData(data, conn) {
   }
 }
 
+function renderGuestReviewScreen() {
+  // Guests see a waiting screen while the host reviews answers
+  const reviewList = document.getElementById('review-list');
+  if (reviewList) {
+    reviewList.innerHTML = '<div class="text-center" style="padding:30px;"><div style="font-size:50px;">⏳</div><p style="margin-top:12px;font-weight:600;">المضيف يراجع الإجابات...</p><p class="text-muted" style="font-size:14px;margin-top:6px;">انتظر اعتماد النتيجة</p></div>';
+  }
+  // Hide the confirm button for guests
+  const btn = document.querySelector('button[onclick="confirmReview()"]');
+  if (btn) btn.style.display = 'none';
+  showScreen('screen-review');
+}
+
 function applySerializedState(s) {
   if (!s) return;
-  state.players = s.players || state.players;
+  // Only update players list — keep my own player info intact for guests
+  if (s.players) {
+    // For guests: make sure to keep my own player object (with roundAnswers being edited)
+    const myId = state.myPlayerId;
+    const myCurrentPlayer = state.players.find(p => p.id === myId);
+    state.players = s.players;
+    // Make sure I'm in the list (host might not have added me yet)
+    if (myId && !state.players.find(p => p.id === myId) && myCurrentPlayer) {
+      state.players.push(myCurrentPlayer);
+    }
+    // If I'm in the host's player list, restore my live roundAnswers (in-progress typing)
+    if (myCurrentPlayer) {
+      const syncedMe = state.players.find(p => p.id === myId);
+      if (syncedMe && state.phase === 'game') {
+        // Keep my current inputs as I'm typing them — don't overwrite with old snapshot
+        syncedMe.roundAnswers = myCurrentPlayer.roundAnswers;
+      }
+    }
+  }
   state.categories = s.categories || state.categories;
   state.currentLetter = s.currentLetter;
   state.currentRound = s.currentRound || 0;
   state.totalRounds = s.totalRounds || 5;
   state.roundDuration = s.roundDuration || 60;
-  state.timeLeft = s.timeLeft || state.roundDuration;
+  state.timeLeft = (typeof s.timeLeft === 'number') ? s.timeLeft : state.roundDuration;
   state.usedLetters = s.usedLetters || [];
   state.reviewOverrides = s.reviewOverrides || {};
   state.difficulty = s.difficulty || 'easy';
+  // Sync roomCode from host (helps guests display it)
+  if (s.roomCode) state.roomCode = s.roomCode;
+  // Update phase from host (so state.phase reflects current screen)
+  if (s.phase) state.phase = s.phase;
+  // Track phase without forcing screen change here (caller decides)
+  state._syncedPhase = s.phase;
 }
 
 function serializeState() {
@@ -3041,7 +3233,7 @@ function serializeState() {
     players: state.players.map(p => ({
       id: p.id, name: p.name, avatar: p.avatar, isHost: p.isHost, isAI: p.isAI,
       totalScore: p.totalScore, roundScore: p.roundScore, roundAnswers: p.roundAnswers,
-      connected: p.connected
+      connected: p.connected, finishOrder: p.finishOrder || null, submitted: p.submitted || false
     })),
     categories: state.categories,
     currentLetter: state.currentLetter,
@@ -3052,7 +3244,8 @@ function serializeState() {
     usedLetters: state.usedLetters,
     reviewOverrides: state.reviewOverrides,
     difficulty: state.difficulty,
-    phase: state.phase
+    phase: state.phase,
+    roomCode: state.roomCode
   };
 }
 
@@ -3088,16 +3281,28 @@ function checkAllSubmitted() {
   }
 }
 
+function getFirstFinisher() {
+  // Returns the player who pressed "Bus Complete" first this round (finishOrder === 1)
+  return state.players.find(p => p.finishOrder === 1);
+}
+
 function finishOnlineRound() {
   if (!state.isHost) return;
+  if (state.roundEnding) return; // Prevent double-finish
+  state.roundEnding = true;
   stopTimer();
   // Calculate scores
   calculateScores();
   state.players.forEach(p => p.submitted = false);
   state.graceStarted = false;
+  // Set phase to 'review' so guests see the review/waiting screen
+  state.phase = 'review';
   // Broadcast results
   broadcastState({ type: 'state-sync', state: serializeState() });
-  showRoundResults();
+  // Host reviews answers
+  goToReview();
+  // Reset flag after a delay
+  setTimeout(() => { state.roundEnding = false; }, 2000);
 }
 
 function initLobbyUI() {
@@ -3182,8 +3387,12 @@ function hostStartMatch() {
 
 function startRoundGuest() {
   // Guest receives round start
-  state.players.forEach(p => { p.roundAnswers = {}; p.roundScore = 0; });
+  state.players.forEach(p => { p.roundAnswers = {}; p.roundScore = 0; p.finishOrder = null; });
   state.reviewOverrides = {};
+  state.finishCounter = 0;
+  // Remove any live first-finisher banner
+  const oldBanner = document.getElementById('live-first-finisher');
+  if (oldBanner) oldBanner.remove();
   renderGameScreenOnline();
   startTimer();
 }
@@ -3245,14 +3454,49 @@ const originalOnCompleteClick = onCompleteClick;
 onCompleteClick = function() {
   if (state.mode === 'online') {
     const me = state.players.find(p => p.id === state.myPlayerId);
+    if (!me) return;
     const allFilled = state.categories.every(cat => me.roundAnswers[cat] && me.roundAnswers[cat].trim());
     if (!allFilled && !confirm('لم تكمل جميع الفئات. هل تريد إنهاء الجولة؟')) return;
     sound.complete();
     vibrate(100);
     stopTimer();
     document.querySelectorAll('.answer-input').forEach(inp => { inp.classList.add('locked'); inp.disabled = true; });
-    sendToHost({ type: 'answers-submitted', playerId: state.myPlayerId, answers: me.roundAnswers });
-    toast('تم إرسال إجاباتك ✓', 'success');
+    const finishTime = state.roundDuration - state.timeLeft;
+
+    if (state.isHost) {
+      // Host processes their own submission locally
+      me.roundAnswers = { ...me.roundAnswers };
+      me.submitted = true;
+      // Track finish order
+      if (me.finishOrder === null || me.finishOrder === undefined) {
+        state.finishCounter = (state.finishCounter || 0) + 1;
+        me.finishOrder = state.finishCounter;
+        me.finishTime = finishTime;
+        if (state.finishCounter === 1) {
+          toast(`🏁 أنت أنهيت الجولة أولاً!`, 'success');
+          broadcastState({
+            type: 'first-finished-notification',
+            playerName: me.name,
+            playerId: me.id
+          });
+          broadcastState({ type: 'state-sync', state: serializeState() });
+        } else {
+          toast(`أنهيت الجولة (#${me.finishOrder})`, 'info');
+          broadcastState({ type: 'state-sync', state: serializeState() });
+        }
+      }
+      checkAllSubmitted();
+    } else {
+      // Guest sends to host
+      sendToHost({
+        type: 'answers-submitted',
+        playerId: state.myPlayerId,
+        answers: me.roundAnswers,
+        finishTime: finishTime,
+        pressedComplete: true
+      });
+      toast('تم إرسال إجاباتك ✓', 'success');
+    }
   } else {
     originalOnCompleteClick();
   }
